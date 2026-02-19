@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <base href="/zabide/">
+    <title>Software Update - ZAB IDE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="mdbpro/mdbpro.css" rel="stylesheet">
+    <script src="mdbpro/mdbpro.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .app-header {
+            background: white;
+            padding: 20px 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-title h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .breadcrumb a {
+            color: #667eea;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .breadcrumb a:hover {
+            color: #764ba2;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .btn-back {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-back:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        .user-badge {
+            color: #7f8c8d;
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .content {
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .warning-banner {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(243, 156, 18, 0.3);
+        }
+
+        .warning-banner h3 {
+            margin: 0 0 10px 0;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .warning-banner p {
+            margin: 5px 0;
+            opacity: 0.95;
+        }
+
+        .update-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            color: #2c3e50;
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-description {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .drop-zone {
+            border: 3px dashed #667eea;
+            border-radius: 20px;
+            padding: 60px 40px;
+            background: #f8f9fa;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .drop-zone:hover::before,
+        .drop-zone.dragover::before {
+            opacity: 1;
+        }
+
+        .drop-zone.dragover {
+            border-color: #764ba2;
+            transform: scale(1.02);
+        }
+
+        .drop-zone.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .drop-zone-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .drop-zone h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .drop-zone p {
+            color: #7f8c8d;
+        }
+
+        .file-selected {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .file-selected.active {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .file-info-display {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .file-icon-large {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+        }
+
+        .file-details h5 {
+            color: #2c3e50;
+            margin: 0 0 5px 0;
+        }
+
+        .file-size {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .btn-remove {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-remove:hover {
+            background: #c0392b;
+        }
+
+        .progress-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .progress-section.active {
+            display: block;
+        }
+
+        .progress {
+            height: 40px;
+            border-radius: 20px;
+            background: #e9ecef;
+            overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: width 0.3s;
+            color: white;
+            font-size: 16px;
+        }
+
+        .upload-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            color: #2c3e50;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .upload-controls {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-upload {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-upload:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-upload:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-cancel {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-cancel:hover {
+            background: #c0392b;
+        }
+
+        .status-message {
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            font-weight: 600;
+            text-align: center;
+            display: none;
+        }
+
+        .status-message.active {
+            display: block;
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        .status-message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 2px solid #bee5eb;
+        }
+
+        .instructions {
+            background: #e3f2fd;
+            padding: 25px;
+            border-radius: 15px;
+            border-left: 5px solid #2196f3;
+        }
+
+        .instructions h4 {
+            color: #1976d2;
+            margin: 0 0 15px 0;
+        }
+
+        .instructions ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            color: #555;
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+
+        .d-none {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .app-header {
+                flex-direction: column;
+                gap: 15px;
+                padding: 20px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .update-section {
+                padding: 25px;
+            }
+
+            .upload-controls {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <div class="app-header">
+        <div class="header-title">
+            <div style="font-size: 32px;">⬆️</div>
+            <div>
+                <h1>Software Update</h1>
+                <div class="breadcrumb">
+                    <a href="">Dashboard</a>
+                    <span>›</span>
+                    <span>Software Update</span>
+                </div>
+            </div>
+        </div>
+        <div class="header-actions">
+            <span class="user-badge">👤 <span id="currentUser"></span></span>
+            <a href="" class="btn-back">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+        <!-- Warning Banner -->
+        <div class="warning-banner">
+            <h3>⚠️ Critical Update Process</h3>
+            <p>• This will update the zabide.war file and restart the application</p>
+            <p>• All active sessions will be terminated</p>
+            <p>• Please ensure no critical operations are running</p>
+            <p>• Make sure you have a backup of the current version</p>
+        </div>
+
+        <!-- Update Section -->
+        <div class="update-section">
+            <h3 class="section-title">📦 Upload New Version</h3>
+            <p class="section-description">
+                Select the zabide.war file to update the application. Only .war files are accepted.
+            </p>
+
+            <!-- Drop Zone -->
+            <div id="dropZone" class="drop-zone">
+                <div class="drop-zone-icon">📦</div>
+                <h4>Drop zabide.war here</h4>
+                <p class="text-muted">or click to browse from your computer</p>
+                <input type="file" id="fileInput" accept=".war" hidden>
+            </div>
+
+            <!-- File Selected Display -->
+            <div id="fileSelected" class="file-selected">
+                <div class="file-info-display">
+                    <div class="file-icon-large">📦</div>
+                    <div class="file-details">
+                        <h5 id="fileName">zabide.war</h5>
+                        <span class="file-size" id="fileSize">0 MB</span>
+                    </div>
+                </div>
+                <button class="btn-remove" onclick="removeFile()">Remove</button>
+            </div>
+
+            <!-- Upload Button -->
+            <div class="upload-controls" style="margin-top: 30px;">
+                <button id="uploadBtn" class="btn-upload" onclick="startUpload()" disabled>
+                    🚀 Upload and Deploy
+                </button>
+            </div>
+
+            <!-- Progress Section -->
+            <div id="progressSection" class="progress-section">
+                <div class="upload-stats">
+                    <div class="stat-card">
+                        <div class="stat-label">Upload Speed</div>
+                        <div class="stat-value" id="uploadSpeed">0 MB/s</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Time Elapsed</div>
+                        <div class="stat-value" id="timeElapsed">0s</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">ETA</div>
+                        <div class="stat-value" id="eta">--</div>
+                    </div>
+                </div>
+
+                <div class="progress">
+                    <div id="progressBar" class="progress-bar" style="width: 0%">0%</div>
+                </div>
+
+                <div class="upload-controls">
+                    <button class="btn-cancel" onclick="cancelUpload()">❌ Cancel Upload</button>
+                </div>
+            </div>
+
+            <!-- Status Message -->
+            <div id="statusMessage" class="status-message"></div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="update-section instructions">
+            <h4>📋 Update Instructions</h4>
+            <ol>
+                <li><strong>Backup:</strong> Ensure you have a backup of the current zabide.war file</li>
+                <li><strong>Notify Users:</strong> Inform all users about the upcoming maintenance</li>
+                <li><strong>Upload:</strong> Select and upload the new zabide.war file</li>
+                <li><strong>Wait:</strong> Wait for the upload to complete (do not close this page)</li>
+                <li><strong>Automatic Deployment:</strong> The system will automatically replace the old file</li>
+                <li><strong>Manual Restart:</strong> Use the "Restart Tomcat" module to restart the application</li>
+                <li><strong>Verify:</strong> After restart, login and verify the new version is working correctly</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        /* ================== AUTH CHECK ================== */
+        let authToken = sessionStorage.getItem('authToken');
+        let currentUsername = sessionStorage.getItem('username');
+
+        if (!authToken || !currentUsername) {
+            window.location.href = '';
+        }
+
+        document.getElementById('currentUser').textContent = currentUsername;
+
+        /* ================== CONFIG ================== */
+        const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB
+
+        /* ================== STATE ================== */
+        let selectedFile = null;
+        let currentUpload = {
+            uploadId: null,
+            offset: 0,
+            cancelled: false,
+            startTime: 0
+        };
+
+        let statsInterval = null;
+
+        /* ================== FILE SELECTION ================== */
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileSelected = document.getElementById('fileSelected');
+        const uploadBtn = document.getElementById('uploadBtn');
+
+        dropZone.onclick = () => fileInput.click();
+
+        dropZone.ondragover = e => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        };
+
+        dropZone.ondragleave = () => {
+            dropZone.classList.remove('dragover');
+        };
+
+        dropZone.ondrop = e => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFileSelect(e.dataTransfer.files[0]);
+        };
+
+        fileInput.onchange = () => {
+            if (fileInput.files[0]) {
+                handleFileSelect(fileInput.files[0]);
+            }
+        };
+
+        function handleFileSelect(file) {
+            if (!file) return;
+
+            // Validate file type
+            if (!file.name.endsWith('.war')) {
+                showStatus('Only .war files are allowed', 'error');
+                return;
+            }
+
+            // Validate filename
+            if (file.name !== 'zabide.war') {
+                showStatus('File must be named "zabide.war"', 'error');
+                return;
+            }
+
+            selectedFile = file;
+
+            // Update UI
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            
+            fileSelected.classList.add('active');
+            dropZone.classList.add('disabled');
+            uploadBtn.disabled = false;
+
+            showStatus('File selected successfully. Ready to upload.', 'info');
+        }
+
+        function removeFile() {
+            selectedFile = null;
+            fileInput.value = '';
+            fileSelected.classList.remove('active');
+            dropZone.classList.remove('disabled');
+            uploadBtn.disabled = true;
+            hideStatus();
+        }
+
+        /* ================== UPLOAD LOGIC ================== */
+        async function startUpload() {
+            if (!selectedFile) return;
+
+            // Confirm before upload
+            if (!confirm('⚠️ This will update zabide.war and require a server restart. Continue?')) {
+                return;
+            }
+
+            try {
+                // Disable UI
+                uploadBtn.disabled = true;
+                dropZone.classList.add('disabled');
+
+                // Start upload
+                const res = await fetch(`upload/start?fileName=${encodeURIComponent(selectedFile.name)}&totalSize=${selectedFile.size}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': authToken }
+                });
+
+                if (!res.ok) {
+                    if (res.status === 401 || res.status === 403) {
+                        sessionStorage.clear();
+                        window.location.href = '';
+                        return;
+                    }
+                    throw new Error('Failed to start upload');
+                }
+
+                currentUpload.uploadId = await res.text();
+                currentUpload.offset = 0;
+                currentUpload.cancelled = false;
+                currentUpload.startTime = Date.now();
+
+                // Show progress section
+                document.getElementById('progressSection').classList.add('active');
+                showStatus('Uploading... Please do not close this page.', 'info');
+
+                // Start stats update
+                statsInterval = setInterval(updateStats, 1000);
+
+                // Start upload loop
+                await uploadLoop();
+
+            } catch (error) {
+                console.error('Upload failed:', error);
+                showStatus('❌ Upload failed: ' + error.message, 'error');
+                resetUpload();
+            }
+        }
+
+        async function uploadLoop() {
+            try {
+                while (currentUpload.offset < selectedFile.size) {
+                    if (currentUpload.cancelled) {
+                        showStatus('Upload cancelled', 'error');
+                        return;
+                    }
+
+                    const chunk = selectedFile.slice(
+                        currentUpload.offset,
+                        currentUpload.offset + CHUNK_SIZE
+                    );
+
+                    const formData = new FormData();
+                    formData.append('uploadId', currentUpload.uploadId);
+                    formData.append('chunk', chunk);
+
+                    const response = await fetch('upload/chunk', {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'Authorization': authToken }
+                    });
+
+                    if (!response.ok) {
+                        if (response.status === 401 || response.status === 403) {
+                            sessionStorage.clear();
+                            window.location.href = '';
+                            return;
+                        }
+                        throw new Error('Chunk upload failed');
+                    }
+
+                    currentUpload.offset += chunk.size;
+                    updateProgress();
+                }
+
+                // Finish upload
+                await fetch(`upload/finish?uploadId=${currentUpload.uploadId}&fileName=${encodeURIComponent(selectedFile.name)}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': authToken }
+                });
+
+                clearInterval(statsInterval);
+                showStatus('✅ Upload completed successfully! The zabide.war file has been updated. Please restart Tomcat to apply changes.', 'success');
+                
+                // Reset after delay
+                setTimeout(() => {
+                    resetUpload();
+                    // Optionally redirect to restart page
+                    // window.location.href = 'restart-tomcat';
+                }, 3000);
+
+            } catch (error) {
+                clearInterval(statsInterval);
+                console.error('Upload failed:', error);
+                showStatus('❌ Upload failed: ' + error.message, 'error');
+                resetUpload();
+            }
+        }
+
+        async function cancelUpload() {
+            if (!confirm('Are you sure you want to cancel the upload?')) {
+                return;
+            }
+
+            currentUpload.cancelled = true;
+
+            if (currentUpload.uploadId) {
+                try {
+                    await fetch(`upload/cancel?uploadId=${currentUpload.uploadId}`, {
+                        method: 'POST',
+                        headers: { 'Authorization': authToken }
+                    });
+                } catch (err) {
+                    console.error('Cancel request failed:', err);
+                }
+            }
+
+            clearInterval(statsInterval);
+            showStatus('Upload cancelled', 'error');
+            resetUpload();
+        }
+
+        function resetUpload() {
+            currentUpload = {
+                uploadId: null,
+                offset: 0,
+                cancelled: false,
+                startTime: 0
+            };
+
+            document.getElementById('progressSection').classList.remove('active');
+            updateProgress();
+            
+            // Re-enable upload button if file is selected
+            if (selectedFile) {
+                uploadBtn.disabled = false;
+            }
+        }
+
+        /* ================== UI UPDATES ================== */
+        function updateProgress() {
+            if (!selectedFile) return;
+
+            const percent = Math.round((currentUpload.offset / selectedFile.size) * 100);
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = percent + '%';
+            progressBar.textContent = percent + '%';
+        }
+
+        function updateStats() {
+            if (!selectedFile || currentUpload.startTime === 0) return;
+
+            const elapsed = (Date.now() - currentUpload.startTime) / 1000;
+            const speed = currentUpload.offset / elapsed;
+            const remaining = selectedFile.size - currentUpload.offset;
+            const eta = remaining / speed;
+
+            document.getElementById('uploadSpeed').textContent = formatSpeed(speed);
+            document.getElementById('timeElapsed').textContent = formatTime(elapsed);
+            document.getElementById('eta').textContent = formatTime(eta);
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status-message active ' + type;
+        }
+
+        function hideStatus() {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.classList.remove('active');
+        }
+
+        /* ================== UTILITIES ================== */
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        function formatSpeed(bytesPerSecond) {
+            return formatFileSize(bytesPerSecond) + '/s';
+        }
+
+        function formatTime(seconds) {
+            if (!isFinite(seconds) || seconds < 0) return '--';
+            
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            
+            if (mins > 0) {
+                return mins + 'm ' + secs + 's';
+            }
+            return secs + 's';
+        }
+    </script>
+
+</body>
+</html>

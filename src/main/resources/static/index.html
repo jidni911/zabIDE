@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ZAB IDE - Admin Portal</title>
+    <base href="/zabide/">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="mdbpro/mdbpro.css" rel="stylesheet">
+    <script src="mdbpro/mdbpro.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Login Screen */
+        .login-container {
+            width: 100%;
+            max-width: 450px;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 50px 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-header {
+            text-align: center;
+        }
+
+        .login-logo {
+            font-size: 64px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .login-header h2 {
+            color: #2c3e50;
+            /* font-weight: 700; */
+            margin-bottom: 10px;
+        }
+
+        .login-header p {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .form-outline {
+            border-bottom: 1px solid #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        /* 
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 14px;
+        } */
+
+        /* .form-control {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: all 0.3s;
+            outline: none;
+        } */
+
+        /* .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        } */
+
+        .btn-login {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 15px;
+            font-weight: 700;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .alert {
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .alert-danger {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+
+        /* Dashboard */
+        .dashboard-container {
+            display: none;
+            width: 100%;
+            min-height: 100vh;
+            background: #f8f9fa;
+        }
+
+        .dashboard-container.active {
+            display: block;
+        }
+
+        .dashboard-header {
+            background: white;
+            padding: 20px 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dashboard-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .dashboard-title h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .dashboard-logo {
+            font-size: 32px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .username-display {
+            color: #7f8c8d;
+            font-weight: 600;
+        }
+
+        .btn-logout {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-logout:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .dashboard-content {
+            padding: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .dashboard-welcome {
+            margin-bottom: 40px;
+        }
+
+        .dashboard-welcome h2 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .dashboard-welcome p {
+            color: #7f8c8d;
+            font-size: 16px;
+        }
+
+        .module-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .module-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 30px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .module-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .module-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .module-title {
+            color: #2c3e50;
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .module-description {
+            color: #7f8c8d;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .module-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-top: 15px;
+        }
+
+        /* Hide/Show Classes */
+        .d-none {
+            display: none !important;
+        }
+
+        /* Loading State */
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .dashboard-header {
+                flex-direction: column;
+                gap: 20px;
+                padding: 20px;
+            }
+
+            .dashboard-content {
+                padding: 20px;
+            }
+
+            .module-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-logo">🔐</div>
+                <h2>ZAB IDE Admin Portal</h2>
+                <p>Please sign in to continue</p>
+            </div>
+
+            <form id="loginForm">
+                <div id="loginError" class="alert alert-danger d-none"></div>
+
+
+                <div class="form-outline" data-mdb-input-init>
+                    <input type="text" id="username" class="form-control" placeholder="Enter your username" required
+                        autofocus>
+                    <label class="form-label" for="username">Username</label>
+                </div>
+
+                <div class="form-outline" data-mdb-input-init>
+                    <input type="password" id="password" class="form-control" placeholder="Enter your password"
+                        required>
+                    <label class="form-label" for="password">Password</label>
+                </div>
+
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="" id="loginRemember" />
+                    <label class="form-check-label" for="loginRemember">Remember me</label>
+                </div>
+
+
+                <button type="submit" id="loginBtn" class="btn-login">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboardScreen" class="dashboard-container">
+        <div class="dashboard-header">
+            <div class="dashboard-title">
+                <div class="dashboard-logo">🚀</div>
+                <h1>ZAB IDE Admin Portal v0.0.1</h1>
+            </div>
+            <div class="user-info">
+                <span class="username-display">👤 <span id="currentUser"></span></span>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="dashboard-content">
+            <div class="dashboard-welcome">
+                <h2>Welcome back!</h2>
+                <p>Select a module to get started</p>
+            </div>
+
+            <div class="module-grid">
+                <!-- File Browser Module -->
+                <a href="files.html" class="module-card">
+                    <div class="module-icon">📁</div>
+                    <div class="module-title">File Browser</div>
+                    <div class="module-description">
+                        Browse, upload, download and manage files on the server with advanced multi-threaded transfer capabilities.
+                    </div>
+                    <span class="module-badge">Active</span>
+                </a>
+
+                <!-- SQL Runner Module -->
+                <a href="sql-runner.html" class="module-card">
+                    <div class="module-icon">🗄️</div>
+                    <div class="module-title">SQL Runner</div>
+                    <div class="module-description">
+                        Execute SQL queries, manage databases, and view results in an intuitive interface.
+                    </div>
+                    <span class="module-badge">Active</span>
+                </a>
+
+                <!-- CMD Admin Module -->
+                <a href="cmd-admin.html" class="module-card">
+                    <div class="module-icon">👨‍💻</div>
+                    <div class="module-title">CMD Admin</div>
+                    <div class="module-description">
+                        Access the server's command line interface for advanced system management and configuration.
+                    </div>
+                    <span class="module-badge">Coming Soon</span>
+                </a>
+
+                <!-- ZAB Backup Module -->
+                <a href="zab-backup.html" class="module-card">
+                    <div class="module-icon">📦</div>
+                    <div class="module-title">ZAB Backup</div>
+                    <div class="module-description">
+                        Back up and restore databases, files, and configurations with ease.
+                    </div>
+                    <span class="module-badge">Coming Soon</span>
+                </a>
+
+                <!-- Restart Tomcat Module -->
+                <a href="restart-tomcat.html" class="module-card">
+                    <div class="module-icon">🔄</div>
+                    <div class="module-title">Restart Tomcat</div>
+                    <div class="module-description">
+                        Safely restart the Tomcat server with monitoring and status updates.
+                    </div>
+                    <span class="module-badge">Active</span>
+                </a>
+
+                <!-- Software Update Module -->
+                <a href="software-update.html" class="module-card">
+                    <div class="module-icon">⬆️</div>
+                    <div class="module-title">Software Update</div>
+                    <div class="module-description">
+                        Check for updates, deploy new versions, and manage application releases.
+                    </div>
+                    <span class="module-badge">Active</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let authToken = null;
+        let currentUsername = null;
+
+        // Initialize on page load
+        document.addEventListener("DOMContentLoaded", () => {
+            checkExistingAuth();
+        });
+
+        // Check if user is already authenticated
+        function checkExistingAuth() {
+            authToken = sessionStorage.getItem('authToken') || localStorage.getItem('authToken');
+            currentUsername = sessionStorage.getItem('username') || localStorage.getItem('username');
+
+            if (authToken && currentUsername) {
+                showDashboard();
+            }
+        }
+
+        // Handle login form submission
+        document.getElementById('loginForm').onsubmit = async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+            const loginBtn = document.getElementById('loginBtn');
+
+            // Disable button and show loading state
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Signing in...';
+            errorDiv.classList.add('d-none');
+
+            try {
+                // Create Basic Auth token
+                const token = btoa(username + ':' + password);
+                authToken = 'Basic ' + token;
+
+                // Test authentication with a simple request
+                const response = await fetch('upload/start?fileName=test&totalSize=1', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': authToken
+                    }
+                });
+
+                if (response.ok || response.status === 400) {
+                    if(loginRemember.checked) {
+                        localStorage.setItem('authToken', authToken);
+                        localStorage.setItem('username', username);
+                    }
+                    // 400 is ok - means auth passed but params invalid (expected for test call)
+                    sessionStorage.setItem('authToken', authToken);
+                    sessionStorage.setItem('username', username);
+                    currentUsername = username;
+
+                    errorDiv.classList.add('d-none');
+                    showDashboard();
+                } else if (response.status === 401 || response.status === 403) {
+                    throw new Error('Invalid credentials');
+                } else {
+                    throw new Error('Authentication failed');
+                }
+            } catch (error) {
+                errorDiv.textContent = '❌ Invalid username or password. Please try again.';
+                errorDiv.classList.remove('d-none');
+                authToken = null;
+
+                // Reset button
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Sign In';
+            }
+        };
+
+        // Show dashboard
+        function showDashboard() {
+            document.getElementById('loginScreen').classList.add('d-none');
+            document.getElementById('dashboardScreen').classList.add('active');
+            document.getElementById('currentUser').textContent = currentUsername;
+        }
+
+        // Logout function
+        function logout() {
+            authToken = null;
+            currentUsername = null;
+            sessionStorage.removeItem('authToken');
+            sessionStorage.removeItem('username');
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('username');
+
+            // Reset login form
+            document.getElementById('loginForm').reset();
+            document.getElementById('loginError').classList.add('d-none');
+
+            // Show login screen
+            document.getElementById('dashboardScreen').classList.remove('active');
+            document.getElementById('loginScreen').classList.remove('d-none');
+
+            // Focus username field
+            setTimeout(() => {
+                document.getElementById('username').focus();
+            }, 100);
+        }
+
+        // Intercept module card clicks to pass auth
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.module-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    const badge = card.querySelector('.module-badge');
+                    if (badge && badge.textContent === 'Coming Soon') {
+                        e.preventDefault();
+                        alert('This module is coming soon!');
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>

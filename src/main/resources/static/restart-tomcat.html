@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Restart Tomcat - ZAB IDE</title>
+    <base href="/zabide/">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="mdbpro/mdbpro.css" rel="stylesheet">
+    <script src="mdbpro/mdbpro.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .app-header {
+            background: white;
+            padding: 20px 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .header-title h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .breadcrumb a {
+            color: #667eea;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .breadcrumb a:hover {
+            color: #764ba2;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .btn-back {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-back:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        .user-badge {
+            color: #7f8c8d;
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .content {
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .warning-banner {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(231, 76, 60, 0.3);
+        }
+
+        .warning-banner h3 {
+            margin: 0 0 10px 0;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .warning-banner p {
+            margin: 5px 0;
+            opacity: 0.95;
+        }
+
+        .restart-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            color: #2c3e50;
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-description {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .status-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px solid #dee2e6;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .status-item {
+            text-align: center;
+        }
+
+        .status-label {
+            color: #7f8c8d;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .status-value {
+            color: #2c3e50;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .status-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .restart-button-container {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .btn-restart {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            border: none;
+            padding: 20px 60px;
+            border-radius: 15px;
+            font-weight: 700;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 20px rgba(231, 76, 60, 0.3);
+        }
+
+        .btn-restart:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-restart:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .progress-section {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .progress-section.active {
+            display: block;
+        }
+
+        .restart-steps {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            background: #f8f9fa;
+            transition: all 0.3s;
+        }
+
+        .step.active {
+            background: #e3f2fd;
+            border-left: 5px solid #2196f3;
+        }
+
+        .step.completed {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: #dee2e6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #495057;
+            flex-shrink: 0;
+        }
+
+        .step.active .step-number {
+            background: #2196f3;
+            color: white;
+        }
+
+        .step.completed .step-number {
+            background: #28a745;
+            color: white;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-title {
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .step-description {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .step-icon {
+            font-size: 24px;
+        }
+
+        .status-message {
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            font-weight: 600;
+            text-align: center;
+            display: none;
+        }
+
+        .status-message.active {
+            display: block;
+        }
+
+        .status-message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+
+        .status-message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+
+        .status-message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 2px solid #bee5eb;
+        }
+
+        .status-message.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 2px solid #ffeaa7;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .countdown {
+            font-size: 48px;
+            font-weight: 700;
+            text-align: center;
+            margin: 30px 0;
+            color: #2196f3;
+        }
+
+        .instructions {
+            background: #e3f2fd;
+            padding: 25px;
+            border-radius: 15px;
+            border-left: 5px solid #2196f3;
+        }
+
+        .instructions h4 {
+            color: #1976d2;
+            margin: 0 0 15px 0;
+        }
+
+        .instructions ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            color: #555;
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+
+        .d-none {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .app-header {
+                flex-direction: column;
+                gap: 15px;
+                padding: 20px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .restart-section {
+                padding: 25px;
+            }
+
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <div class="app-header">
+        <div class="header-title">
+            <div style="font-size: 32px;">🔄</div>
+            <div>
+                <h1>Restart Tomcat</h1>
+                <div class="breadcrumb">
+                    <a href="">Dashboard</a>
+                    <span>›</span>
+                    <span>Restart Tomcat</span>
+                </div>
+            </div>
+        </div>
+        <div class="header-actions">
+            <span class="user-badge">👤 <span id="currentUser"></span></span>
+            <a href="" class="btn-back">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+        <!-- Warning Banner -->
+        <div class="warning-banner">
+            <h3>⚠️ Critical System Operation</h3>
+            <p>• This will restart the Tomcat application server</p>
+            <p>• All active user sessions will be terminated</p>
+            <p>• The application will be unavailable for approximately 30-60 seconds</p>
+            <p>• You will need to log in again after the restart</p>
+        </div>
+
+        <!-- Status Section -->
+        <div class="restart-section">
+            <h3 class="section-title">📊 System Status</h3>
+            <p class="section-description">
+                Current application server status and information
+            </p>
+
+            <div class="status-card">
+                <div class="status-grid">
+                    <div class="status-item">
+                        <div class="status-icon">🟢</div>
+                        <div class="status-label">Server Status</div>
+                        <div class="status-value" id="serverStatus">Running</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-icon">⚡</div>
+                        <div class="status-label">Application</div>
+                        <div class="status-value">ZAB IDE</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-icon">🌐</div>
+                        <div class="status-label">Container</div>
+                        <div class="status-value">Tomcat</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Restart Button -->
+            <div class="restart-button-container">
+                <button id="restartBtn" class="btn-restart" onclick="initiateRestart()">
+                    🔄 Restart Tomcat Server
+                </button>
+            </div>
+
+            <!-- Progress Section -->
+            <div id="progressSection" class="progress-section">
+                <div class="restart-steps">
+                    <div id="step1" class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <div class="step-title">Initiating Restart</div>
+                            <div class="step-description">Preparing to modify web.xml configuration</div>
+                        </div>
+                        <div class="step-icon">⏳</div>
+                    </div>
+
+                    <div id="step2" class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <div class="step-title">Modifying Configuration</div>
+                            <div class="step-description">Toggling space in web.xml to trigger reload</div>
+                        </div>
+                        <div class="step-icon">⚙️</div>
+                    </div>
+
+                    <div id="step3" class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <div class="step-title">Server Reloading</div>
+                            <div class="step-description">Tomcat is restarting the application</div>
+                        </div>
+                        <div class="step-icon">🔄</div>
+                    </div>
+
+                    <div id="step4" class="step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <div class="step-title">Restart Complete</div>
+                            <div class="step-description">Application is ready to use</div>
+                        </div>
+                        <div class="step-icon">✅</div>
+                    </div>
+                </div>
+
+                <div id="countdown" class="countdown d-none"></div>
+            </div>
+
+            <!-- Status Message -->
+            <div id="statusMessage" class="status-message"></div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="restart-section instructions">
+            <h4>📋 Restart Process Information</h4>
+            <ul>
+                <li><strong>Mechanism:</strong> Toggles a space in web.xml to trigger Tomcat's auto-reload feature</li>
+                <li><strong>Downtime:</strong> Typically 30-60 seconds depending on application size</li>
+                <li><strong>Session Loss:</strong> All active sessions will be terminated</li>
+                <li><strong>After Restart:</strong> You'll be redirected to login automatically</li>
+                <li><strong>Use Cases:</strong> After software updates, configuration changes, or troubleshooting</li>
+                <li><strong>Safety:</strong> This is a graceful restart - no data will be lost</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        /* ================== AUTH CHECK ================== */
+        let authToken = sessionStorage.getItem('authToken');
+        let currentUsername = sessionStorage.getItem('username');
+
+        if (!authToken || !currentUsername) {
+            window.location.href = '';
+        }
+
+        document.getElementById('currentUser').textContent = currentUsername;
+
+        /* ================== RESTART LOGIC ================== */
+        let restartInProgress = false;
+
+        async function initiateRestart() {
+            if (restartInProgress) return;
+
+            // Confirm action
+            const confirmed = confirm(
+                '⚠️ WARNING: This will restart Tomcat and terminate all active sessions.\n\n' +
+                'You will need to log in again after the restart.\n\n' +
+                'Continue with restart?'
+            );
+
+            if (!confirmed) return;
+
+            restartInProgress = true;
+            document.getElementById('restartBtn').disabled = true;
+            document.getElementById('progressSection').classList.add('active');
+
+            try {
+                // Step 1: Initiating
+                updateStep(1, 'active');
+                showStatus('Initiating restart sequence...', 'info');
+                await sleep(1000);
+
+                // Step 2: Call restart API
+                updateStep(1, 'completed');
+                updateStep(2, 'active');
+                showStatus('Modifying web.xml configuration...', 'info');
+
+                const response = await fetch('api/restart-tomcat', {
+                    method: 'POST',
+                    headers: { 'Authorization': authToken }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Restart request failed');
+                }
+
+                updateStep(2, 'completed');
+                
+                // Step 3: Server reloading
+                updateStep(3, 'active');
+                showStatus('Tomcat is restarting... Please wait.', 'warning');
+                
+                // Wait for restart (typically 30-60 seconds)
+                await waitForRestart();
+
+                // Step 4: Complete
+                updateStep(3, 'completed');
+                updateStep(4, 'completed');
+                showStatus('✅ Restart completed successfully!', 'success');
+
+                // Countdown to redirect
+                await countdownRedirect(5);
+
+            } catch (error) {
+                console.error('Restart failed:', error);
+                showStatus('❌ Restart failed: ' + error.message, 'error');
+                restartInProgress = false;
+                document.getElementById('restartBtn').disabled = false;
+                resetSteps();
+            }
+        }
+
+        async function waitForRestart() {
+            // Wait 10 seconds for the restart to begin
+            await sleep(10000);
+
+            // Try to ping the server (it should be down)
+            let serverDown = false;
+            for (let i = 0; i < 10; i++) {
+                try {
+                    const response = await fetch('api/health-check', { 
+                        method: 'GET',
+                        signal: AbortSignal.timeout(2000)
+                    });
+                    if (!response.ok) {
+                        serverDown = true;
+                        break;
+                    }
+                } catch {
+                    serverDown = true;
+                    break;
+                }
+                await sleep(1000);
+            }
+
+            if (!serverDown) {
+                // Server didn't go down, but restart might have been fast
+                await sleep(5000);
+                return;
+            }
+
+            // Now wait for it to come back up
+            for (let i = 0; i < 60; i++) {
+                try {
+                    const response = await fetch('api/health-check', { 
+                        method: 'GET',
+                        signal: AbortSignal.timeout(2000)
+                    });
+                    if (response.ok) {
+                        // Server is back up
+                        return;
+                    }
+                } catch {
+                    // Still down, keep waiting
+                }
+                await sleep(1000);
+            }
+
+            throw new Error('Server did not come back online within expected time');
+        }
+
+        async function countdownRedirect(seconds) {
+            const countdownDiv = document.getElementById('countdown');
+            countdownDiv.classList.remove('d-none');
+
+            for (let i = seconds; i > 0; i--) {
+                countdownDiv.textContent = `Redirecting to login in ${i}...`;
+                await sleep(1000);
+            }
+
+            // Clear session and redirect
+            sessionStorage.clear();
+            window.location.href = '';
+        }
+
+        function updateStep(stepNumber, status) {
+            const step = document.getElementById('step' + stepNumber);
+            step.classList.remove('active', 'completed');
+            if (status === 'active') {
+                step.classList.add('active');
+            } else if (status === 'completed') {
+                step.classList.add('completed');
+                const icon = step.querySelector('.step-icon');
+                icon.textContent = '✅';
+            }
+        }
+
+        function resetSteps() {
+            for (let i = 1; i <= 4; i++) {
+                const step = document.getElementById('step' + i);
+                step.classList.remove('active', 'completed');
+            }
+            document.getElementById('progressSection').classList.remove('active');
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status-message active ' + type;
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    </script>
+
+</body>
+</html>

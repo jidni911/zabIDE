@@ -1,0 +1,1776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Code Editor - ZAB IDE</title>
+    <base href="/zabide/">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="mdbpro/mdbpro.css" rel="stylesheet">
+    <script src="mdbpro/mdbpro.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #1e1e1e;
+            --bg-secondary: #252526;
+            --bg-tertiary: #2d2d30;
+            --bg-hover: #2a2d2e;
+            --bg-active: #37373d;
+            --border-color: #3e3e42;
+            --text-primary: #cccccc;
+            --text-secondary: #858585;
+            --accent: #007acc;
+            --accent-hover: #0098ff;
+            --success: #4ec9b0;
+            --warning: #ce9178;
+            --error: #f48771;
+            --modified: #f0ad4e;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Header */
+        .app-header {
+            background: var(--bg-secondary);
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 40px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 13px;
+        }
+
+        .header-title {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .breadcrumb-custom {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--text-secondary);
+            font-size: 11px;
+        }
+
+        .breadcrumb-custom a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        .breadcrumb-custom a:hover {
+            color: var(--accent);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 12px;
+        }
+
+        .user-badge {
+            color: var(--text-secondary);
+        }
+
+        .btn-back {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 5px 12px;
+            border-radius: 3px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-back:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Main Container */
+        .ide-container {
+            display: flex;
+            height: calc(100vh - 40px);
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-header h2 {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .icon-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 3px;
+            transition: all 0.2s;
+            font-size: 14px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .icon-btn:active {
+            background: var(--bg-active);
+        }
+
+        /* File Tree */
+        .file-tree {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: auto;
+            padding: 5px 0;
+            font-size: 13px;
+        }
+
+        .file-tree::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        .file-tree::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        .file-tree::-webkit-scrollbar-thumb {
+            background: #424242;
+            border-radius: 5px;
+        }
+
+        .file-tree::-webkit-scrollbar-thumb:hover {
+            background: #4a4a4a;
+        }
+
+        .tree-node {
+            position: relative;
+        }
+
+        .tree-item {
+            display: flex;
+            align-items: center;
+            padding: 3px 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .tree-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .tree-item.active {
+            background: var(--bg-active);
+        }
+
+        .tree-item.loading {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .tree-arrow {
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            transition: transform 0.2s;
+            flex-shrink: 0;
+            margin-right: 2px;
+        }
+
+        .tree-arrow.expanded {
+            transform: rotate(90deg);
+        }
+
+        .tree-arrow.hidden {
+            visibility: hidden;
+        }
+
+        .tree-icon {
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 5px;
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+
+        .tree-label {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        .tree-actions {
+            display: none;
+            gap: 2px;
+            margin-left: 4px;
+        }
+
+        .tree-item:hover .tree-actions {
+            display: flex;
+        }
+
+        .tree-action-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 3px;
+            transition: all 0.2s;
+            font-size: 11px;
+        }
+
+        .tree-action-btn:hover {
+            background: var(--bg-active);
+            color: var(--text-primary);
+        }
+
+        .tree-action-btn.bookmarked {
+            color: var(--modified);
+        }
+
+        .tree-children {
+            display: none;
+        }
+
+        .tree-children.expanded {
+            display: block;
+        }
+
+        /* Bookmarks Panel */
+        .bookmarks-panel {
+            position: fixed;
+            right: -320px;
+            top: 40px;
+            width: 320px;
+            height: calc(100vh - 40px);
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border-color);
+            transition: right 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bookmarks-panel.open {
+            right: 0;
+        }
+
+        .bookmarks-toggle {
+            position: fixed;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 60px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-right: none;
+            border-radius: 12px 0 0 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            z-index: 999;
+        }
+
+        .bookmarks-toggle:hover {
+            background: var(--bg-hover);
+            color: var(--accent);
+            width: 28px;
+        }
+
+        .bookmarks-toggle.hidden {
+            display: none;
+        }
+
+        .bookmarks-header {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .bookmarks-header h3 {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .bookmarks-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        .bookmarks-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .bookmarks-content::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        .bookmarks-content::-webkit-scrollbar-thumb {
+            background: #424242;
+            border-radius: 4px;
+        }
+
+        .bookmark-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: background 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .bookmark-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .bookmark-icon {
+            color: var(--modified);
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .bookmark-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .bookmark-name {
+            font-size: 13px;
+            color: var(--text-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .bookmark-path {
+            font-size: 11px;
+            color: var(--text-secondary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .bookmark-remove {
+            color: var(--text-secondary);
+            opacity: 0;
+            transition: opacity 0.2s;
+            font-size: 12px;
+        }
+
+        .bookmark-item:hover .bookmark-remove {
+            opacity: 1;
+        }
+
+        .bookmark-remove:hover {
+            color: var(--error);
+        }
+
+        .bookmarks-empty {
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .bookmarks-empty i {
+            font-size: 32px;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+
+        /* Editor Container */
+        .editor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+            overflow: hidden;
+        }
+
+        .editor-tabs {
+            display: flex;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            overflow-x: auto;
+            height: 35px;
+            flex-shrink: 0;
+        }
+
+        .editor-tabs::-webkit-scrollbar {
+            height: 0;
+        }
+
+        .editor-tab {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            background: transparent;
+            border-right: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background 0.15s;
+            white-space: nowrap;
+            font-size: 13px;
+            min-width: 100px;
+            position: relative;
+        }
+
+        .editor-tab:hover {
+            background: var(--bg-hover);
+        }
+
+        .editor-tab.active {
+            background: var(--bg-primary);
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .editor-tab.modified .tab-label::after {
+            content: ' ●';
+            color: var(--modified);
+        }
+
+        .tab-icon {
+            font-size: 14px;
+        }
+
+        .tab-label {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tab-close {
+            opacity: 0;
+            transition: opacity 0.2s;
+            padding: 2px;
+            border-radius: 3px;
+        }
+
+        .editor-tab:hover .tab-close {
+            opacity: 1;
+        }
+
+        .tab-close:hover {
+            background: var(--bg-active);
+        }
+
+        /* Editor Area */
+        .editor-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .editor-toolbar {
+            background: var(--bg-secondary);
+            padding: 8px 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .editor-file-info {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .editor-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-save {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 6px 15px;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-save:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-save:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .editor-content {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .code-editor {
+            width: 100%;
+            height: 100%;
+            padding: 15px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: none;
+            outline: none;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            tab-size: 4;
+        }
+
+        .empty-editor {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .empty-editor i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            padding: 4px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: var(--text-secondary);
+            height: 24px;
+        }
+
+        .status-left, .status-right {
+            display: flex;
+            gap: 15px;
+        }
+
+        /* Modal Styles */
+        .modal-content {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .modal-header {
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-title {
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .modal-body {
+            background: var(--bg-secondary);
+        }
+
+        .form-control {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .form-control:focus {
+            background: var(--bg-primary);
+            border-color: var(--accent);
+            color: var(--text-primary);
+        }
+
+        .form-label {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+        }
+
+        .btn-close {
+            filter: invert(1);
+        }
+
+        /* Loading Spinner */
+        .spinner-border-sm {
+            width: 14px;
+            height: 14px;
+            border-width: 2px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 250px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <div class="app-header">
+        <div class="header-left">
+            <span class="header-title">ZAB IDE - Code Editor</span>
+            <div class="breadcrumb-custom">
+                <a href="">Dashboard</a>
+                <span>›</span>
+                <span>Code Editor</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <span class="user-badge"><i class="fas fa-user"></i> <span id="currentUser"></span></span>
+            <a href="" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+        </div>
+    </div>
+
+    <!-- Main IDE Container -->
+    <div class="ide-container">
+        <!-- Sidebar with File Tree -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>Explorer</h2>
+                <div class="sidebar-actions">
+                    <button class="icon-btn" onclick="collapseAll()" title="Collapse All">
+                        <i class="fas fa-compress-alt"></i>
+                    </button>
+                    <button class="icon-btn" onclick="refreshTree()" title="Refresh">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div style="padding: 8px 10px; border-bottom: 1px solid var(--border-color);">
+                <div style="position: relative;">
+                    <input type="text" id="fileSearchInput" class="form-control form-control-sm" 
+                           placeholder="Search files..." 
+                           style="background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); font-size: 12px; padding-left: 30px;">
+                    <i class="fas fa-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 12px;"></i>
+                </div>
+            </div>
+            <div class="file-tree" id="fileTree">
+                <div class="tree-item" style="padding: 20px; text-align: center; color: var(--text-secondary);">
+                    <i class="fas fa-spinner fa-spin"></i> Loading...
+                </div>
+            </div>
+        </div>
+
+        <!-- Editor Container -->
+        <div class="editor-container">
+            <div class="editor-tabs" id="editorTabs">
+                <!-- Tabs will be dynamically added here -->
+            </div>
+
+            <div class="editor-wrapper">
+                <div class="editor-content" id="editorContent">
+                    <div class="empty-editor">
+                        <i class="fas fa-code"></i>
+                        <p>Select a file to start editing</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-bar">
+                <div class="status-left">
+                    <span id="statusMessage">Ready</span>
+                    <span id="fileStats"></span>
+                </div>
+                <div class="status-right">
+                    <span id="cursorPosition">Ln 1, Col 1</span>
+                    <span id="fileEncoding">UTF-8</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bookmarks Toggle Button -->
+    <div class="bookmarks-toggle" id="bookmarksToggle" onclick="toggleBookmarksPanel()">
+        <i class="fas fa-star"></i>
+    </div>
+
+    <!-- Bookmarks Panel -->
+    <div class="bookmarks-panel" id="bookmarksPanel">
+        <div class="bookmarks-header">
+            <h3><i class="fas fa-star"></i> Bookmarks</h3>
+            <button class="icon-btn" onclick="toggleBookmarksPanel()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="bookmarks-content" id="bookmarksContent">
+            <div class="bookmarks-empty">
+                <i class="fas fa-star"></i>
+                <p>No bookmarks yet</p>
+                <p style="margin-top: 5px;">Click the star icon next to files to bookmark them</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- New File Modal -->
+    <div class="modal fade" id="newFileModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New File</h5>
+                    <button type="button" class="btn-close" data-mdb-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">File Name</label>
+                        <input type="text" class="form-control" id="newFileName" placeholder="example.txt">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Location</label>
+                        <input type="text" class="form-control" id="newFilePath" placeholder="folder/subfolder/" value="">
+                        <small class="text-muted">Relative to /webapps/zab/</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-mdb-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="createNewFile()">Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Folder Modal -->
+    <div class="modal fade" id="newFolderModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New Folder</h5>
+                    <button type="button" class="btn-close" data-mdb-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Folder Name</label>
+                        <input type="text" class="form-control" id="newFolderName" placeholder="my-folder">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Location</label>
+                        <input type="text" class="form-control" id="newFolderPath" placeholder="parent-folder/" value="">
+                        <small class="text-muted">Relative to /webapps/zab/</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-mdb-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="createNewFolder()">Create</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Files Modal -->
+    <div class="modal fade" id="uploadModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Upload Files</h5>
+                    <button type="button" class="btn-close" data-mdb-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Upload To</label>
+                        <input type="text" class="form-control" id="uploadPath" readonly>
+                        <small class="text-muted">Destination folder</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Select Files</label>
+                        <input type="file" class="form-control" id="uploadFiles" multiple>
+                        <small class="text-muted">You can select multiple files</small>
+                    </div>
+                    <div id="uploadProgress" class="d-none">
+                        <div class="progress mb-2" style="height: 20px;">
+                            <div id="uploadProgressBar" class="progress-bar" role="progressbar" style="width: 0%">0%</div>
+                        </div>
+                        <small id="uploadStatus" class="text-muted"></small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-mdb-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary btn-sm" id="uploadBtn" onclick="uploadFiles()">Upload</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ================== AUTH CHECK ================== */
+        let authToken = sessionStorage.getItem('authToken');
+        let currentUsername = sessionStorage.getItem('username');
+
+        if (!authToken || !currentUsername) {
+            window.location.href = '';
+        }
+
+        document.getElementById('currentUser').textContent = currentUsername;
+
+        /* ================== STATE ================== */
+        let openFiles = new Map(); // Map<path, {content, originalContent, modified, element}>
+        let activeFile = null;
+        let fileTreeData = null;
+        let bookmarks = []; // Array of {path, name}
+        let allTreeItems = []; // For search functionality
+
+        /* ================== INIT ================== */
+        document.addEventListener("DOMContentLoaded", () => {
+            loadFileTree();
+            initKeyboardShortcuts();
+            initSearch();
+            loadBookmarks();
+        });
+
+        /* ================== FILE TREE ================== */
+        async function loadFileTree() {
+            try {
+                const response = await fetch('file/tree?path=&depth=5', {
+                    headers: { 'Authorization': authToken }
+                });
+
+                if (!response.ok) throw new Error('Failed to load file tree');
+
+                fileTreeData = await response.json();
+                renderFileTree(fileTreeData);
+            } catch (error) {
+                console.error('Error loading file tree:', error);
+                document.getElementById('fileTree').innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: var(--error);">
+                        <i class="fas fa-exclamation-triangle"></i> Failed to load files
+                    </div>`;
+            }
+        }
+
+        function renderFileTree(node, parentElement = null, level = 0) {
+            if (!parentElement) {
+                parentElement = document.getElementById('fileTree');
+                parentElement.innerHTML = '';
+                allTreeItems = [];
+                
+                // Don't render the root 'zab' node, render its children directly
+                if (node && node.isDirectory && node.children) {
+                    node.children.forEach(child => {
+                        renderFileTree(child, parentElement, 0);
+                    });
+                }
+                return;
+            }
+
+            if (!node) return;
+
+            const nodeDiv = document.createElement('div');
+            nodeDiv.className = 'tree-node';
+            nodeDiv.dataset.path = node.path;
+
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'tree-item';
+            itemDiv.style.paddingLeft = `${level * 12 + 8}px`;
+
+            // Arrow (for folders)
+            const arrow = document.createElement('span');
+            arrow.className = node.isDirectory ? 'tree-arrow' : 'tree-arrow hidden';
+            arrow.innerHTML = '<i class="fas fa-chevron-right"></i>';
+            itemDiv.appendChild(arrow);
+
+            // Icon
+            const icon = document.createElement('span');
+            icon.className = 'tree-icon';
+            if (node.isDirectory) {
+                icon.innerHTML = '<i class="fas fa-folder" style="color: var(--accent);"></i>';
+            } else {
+                icon.innerHTML = getFileIcon(node.name);
+            }
+            itemDiv.appendChild(icon);
+
+            // Label
+            const label = document.createElement('span');
+            label.className = 'tree-label';
+            label.textContent = node.name;
+            itemDiv.appendChild(label);
+
+            // Actions (show on hover)
+            const actions = document.createElement('div');
+            actions.className = 'tree-actions';
+
+            // Bookmark button (for all items)
+            const bookmarkBtn = document.createElement('button');
+            bookmarkBtn.className = 'tree-action-btn';
+            bookmarkBtn.innerHTML = '<i class="fas fa-star"></i>';
+            bookmarkBtn.title = 'Bookmark';
+            if (isBookmarked(node.path)) {
+                bookmarkBtn.classList.add('bookmarked');
+            }
+            bookmarkBtn.onclick = (e) => {
+                e.stopPropagation();
+                toggleBookmark(node.path, node.name);
+                bookmarkBtn.classList.toggle('bookmarked');
+            };
+            actions.appendChild(bookmarkBtn);
+
+            // Download button (for all items)
+            const downloadBtn = document.createElement('button');
+            downloadBtn.className = 'tree-action-btn';
+            downloadBtn.innerHTML = '<i class="fas fa-download"></i>';
+            downloadBtn.title = node.isDirectory ? 'Download as ZIP' : 'Download';
+            downloadBtn.onclick = (e) => {
+                e.stopPropagation();
+                downloadItem(node.path, node.isDirectory);
+            };
+            actions.appendChild(downloadBtn);
+
+            // Add file/folder/upload buttons (only for folders)
+            if (node.isDirectory) {
+                const uploadBtn = document.createElement('button');
+                uploadBtn.className = 'tree-action-btn';
+                uploadBtn.innerHTML = '<i class="fas fa-upload"></i>';
+                uploadBtn.title = 'Upload Files';
+                uploadBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    showUploadModal(node.path);
+                };
+                actions.appendChild(uploadBtn);
+
+                const addFileBtn = document.createElement('button');
+                addFileBtn.className = 'tree-action-btn';
+                addFileBtn.innerHTML = '<i class="fa-solid fa-file-circle-plus"></i>';
+                addFileBtn.title = 'New File';
+                addFileBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    showNewFileModal(node.path);
+                };
+                actions.appendChild(addFileBtn);
+
+                const addFolderBtn = document.createElement('button');
+                addFolderBtn.className = 'tree-action-btn';
+                addFolderBtn.innerHTML = '<i class="fas fa-folder-plus"></i>';
+                addFolderBtn.title = 'New Folder';
+                addFolderBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    showNewFolderModal(node.path);
+                };
+                actions.appendChild(addFolderBtn);
+            }
+
+            itemDiv.appendChild(actions);
+
+            // Click handler
+            if (node.isDirectory) {
+                itemDiv.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleFolder(nodeDiv, node, level);
+                };
+            } else {
+                itemDiv.onclick = (e) => {
+                    e.stopPropagation();
+                    openFile(node.path);
+                    // Mark as active
+                    document.querySelectorAll('.tree-item').forEach(el => el.classList.remove('active'));
+                    itemDiv.classList.add('active');
+                };
+            }
+
+            nodeDiv.appendChild(itemDiv);
+
+            // Store for search
+            allTreeItems.push({
+                element: nodeDiv,
+                node: node,
+                name: node.name.toLowerCase(),
+                path: node.path.toLowerCase()
+            });
+
+            // Children container
+            if (node.isDirectory && node.children) {
+                const childrenDiv = document.createElement('div');
+                childrenDiv.className = 'tree-children';
+                
+                node.children.forEach(child => {
+                    renderFileTree(child, childrenDiv, level + 1);
+                });
+
+                nodeDiv.appendChild(childrenDiv);
+            }
+
+            parentElement.appendChild(nodeDiv);
+        }
+
+        function toggleFolder(nodeDiv, node, level) {
+            const arrow = nodeDiv.querySelector('.tree-arrow');
+            const children = nodeDiv.querySelector('.tree-children');
+
+            if (children.classList.contains('expanded')) {
+                children.classList.remove('expanded');
+                arrow.classList.remove('expanded');
+            } else {
+                children.classList.add('expanded');
+                arrow.classList.add('expanded');
+            }
+        }
+
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const iconMap = {
+                'java': '<i class="fab fa-java" style="color: #b07219;"></i>',
+                'js': '<i class="fab fa-js-square" style="color: #f7df1e;"></i>',
+                'html': '<i class="fab fa-html5" style="color: #e34c26;"></i>',
+                'css': '<i class="fab fa-css3-alt" style="color: #563d7c;"></i>',
+                'json': '<i class="fas fa-brackets-curly" style="color: var(--modified);"></i>',
+                'xml': '<i class="fas fa-code" style="color: var(--warning);"></i>',
+                'jsp': '<i class="fas fa-file-code" style="color: #e34c26;"></i>',
+                'md': '<i class="fab fa-markdown" style="color: var(--text-primary);"></i>',
+                'txt': '<i class="fas fa-file-alt" style="color: var(--text-secondary);"></i>',
+            };
+            return iconMap[ext] || '<i class="fas fa-file" style="color: var(--text-secondary);"></i>';
+        }
+
+        function refreshTree() {
+            document.getElementById('fileTree').innerHTML = '<div style="padding: 20px; text-align: center;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+            loadFileTree();
+        }
+
+        /* ================== FILE OPERATIONS ================== */
+        async function openFile(filepath) {
+            // Check if already open
+            if (openFiles.has(filepath)) {
+                switchToFile(filepath);
+                return;
+            }
+
+            try {
+                updateStatus('Loading file...');
+                
+                const response = await fetch(`file/read?path=${encodeURIComponent(filepath)}`, {
+                    headers: { 'Authorization': authToken }
+                });
+
+                if (!response.ok) throw new Error('Failed to read file');
+
+                const data = await response.json();
+                const content = data.content;
+
+                // Add to open files first
+                openFiles.set(filepath, {
+                    content: content,
+                    originalContent: content,
+                    modified: false,
+                    element: null
+                });
+
+                // Create tab (this will set the element reference)
+                createTab(filepath, content);
+
+                // Switch to this file
+                switchToFile(filepath);
+                
+                updateStatus('File loaded');
+            } catch (error) {
+                console.error('Error opening file:', error);
+                updateStatus('Failed to open file', 'error');
+                alert('Failed to open file: ' + error.message);
+            }
+        }
+
+        function createTab(filepath, content) {
+            const filename = filepath.split('/').pop();
+            const tabsContainer = document.getElementById('editorTabs');
+
+            const tab = document.createElement('div');
+            tab.className = 'editor-tab';
+            tab.dataset.filepath = filepath;
+
+            const icon = document.createElement('span');
+            icon.className = 'tab-icon';
+            icon.innerHTML = getFileIcon(filename);
+
+            const label = document.createElement('span');
+            label.className = 'tab-label';
+            label.textContent = filename;
+
+            const close = document.createElement('span');
+            close.className = 'tab-close';
+            close.innerHTML = '<i class="fas fa-times"></i>';
+            close.onclick = (e) => {
+                e.stopPropagation();
+                closeTab(filepath);
+            };
+
+            tab.appendChild(icon);
+            tab.appendChild(label);
+            tab.appendChild(close);
+
+            tab.onclick = () => switchToFile(filepath);
+
+            tabsContainer.appendChild(tab);
+
+            // Store tab element reference in the existing fileData object
+            const fileData = openFiles.get(filepath);
+            if (fileData) {
+                fileData.element = tab;
+            }
+        }
+
+        function switchToFile(filepath) {
+            activeFile = filepath;
+            const fileData = openFiles.get(filepath);
+
+            // Update tab active state
+            document.querySelectorAll('.editor-tab').forEach(tab => {
+                if (tab.dataset.filepath === filepath) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+
+            // Update editor content
+            const editorContent = document.getElementById('editorContent');
+            editorContent.innerHTML = `
+                <div class="editor-toolbar">
+                    <div class="editor-file-info">
+                        <i class="fas fa-file"></i> ${filepath}
+                    </div>
+                    <div class="editor-actions">
+                        <button class="btn-save" onclick="saveFile()" ${!fileData.modified ? 'disabled' : ''}>
+                            <i class="fas fa-save"></i> Save
+                        </button>
+                    </div>
+                </div>
+                <textarea class="code-editor" id="codeEditor">${fileData.content}</textarea>
+            `;
+
+            // Add event listener for content changes
+            const editor = document.getElementById('codeEditor');
+            editor.oninput = () => {
+                fileData.content = editor.value;
+                fileData.modified = fileData.content !== fileData.originalContent;
+                
+                // Update tab modified state
+                if (fileData.modified) {
+                    fileData.element.classList.add('modified');
+                    document.querySelector('.btn-save').disabled = false;
+                } else {
+                    fileData.element.classList.remove('modified');
+                    document.querySelector('.btn-save').disabled = true;
+                }
+            };
+
+            // Track cursor position
+            editor.addEventListener('keyup', updateCursorPosition);
+            editor.addEventListener('click', updateCursorPosition);
+
+            updateCursorPosition();
+            updateFileStats();
+        }
+
+        async function saveFile() {
+            if (!activeFile) return;
+
+            const fileData = openFiles.get(activeFile);
+            if (!fileData.modified) return;
+
+            try {
+                updateStatus('Saving...');
+                document.querySelector('.btn-save').disabled = true;
+                document.querySelector('.btn-save').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+                const response = await fetch('file/write', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': authToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        path: activeFile,
+                        content: fileData.content
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to save file');
+
+                // Update state
+                fileData.originalContent = fileData.content;
+                fileData.modified = false;
+                fileData.element.classList.remove('modified');
+
+                updateStatus('File saved successfully', 'success');
+                document.querySelector('.btn-save').innerHTML = '<i class="fas fa-save"></i> Save';
+                
+                setTimeout(() => {
+                    document.querySelector('.btn-save').disabled = true;
+                }, 500);
+
+            } catch (error) {
+                console.error('Error saving file:', error);
+                updateStatus('Failed to save file', 'error');
+                alert('Failed to save file: ' + error.message);
+                document.querySelector('.btn-save').disabled = false;
+                document.querySelector('.btn-save').innerHTML = '<i class="fas fa-save"></i> Save';
+            }
+        }
+
+        function closeTab(filepath) {
+            const fileData = openFiles.get(filepath);
+            
+            if (fileData.modified) {
+                if (!confirm('File has unsaved changes. Close anyway?')) {
+                    return;
+                }
+            }
+
+            // Remove tab
+            fileData.element.remove();
+            openFiles.delete(filepath);
+
+            // If this was active file, switch to another or show empty
+            if (activeFile === filepath) {
+                const remaining = Array.from(openFiles.keys());
+                if (remaining.length > 0) {
+                    switchToFile(remaining[0]);
+                } else {
+                    activeFile = null;
+                    document.getElementById('editorContent').innerHTML = `
+                        <div class="empty-editor">
+                            <i class="fas fa-code"></i>
+                            <p>Select a file to start editing</p>
+                        </div>`;
+                }
+            }
+        }
+
+        /* ================== NEW FILE/FOLDER ================== */
+        function showNewFileModal(parentPath = '') {
+            const modal = new mdb.Modal(document.getElementById('newFileModal'));
+            document.getElementById('newFileName').value = '';
+            // Ensure trailing slash
+            let path = parentPath || '';
+            if (path && !path.endsWith('/')) {
+                path += '/';
+            }
+            document.getElementById('newFilePath').value = path;
+            modal.show();
+        }
+
+        function showNewFolderModal(parentPath = '') {
+            const modal = new mdb.Modal(document.getElementById('newFolderModal'));
+            document.getElementById('newFolderName').value = '';
+            // Ensure trailing slash
+            let path = parentPath || '';
+            if (path && !path.endsWith('/')) {
+                path += '/';
+            }
+            document.getElementById('newFolderPath').value = path;
+            modal.show();
+        }
+
+        async function createNewFile() {
+            const fileName = document.getElementById('newFileName').value.trim();
+            const filePath = document.getElementById('newFilePath').value.trim();
+
+            if (!fileName) {
+                alert('Please enter a file name');
+                return;
+            }
+
+            const fullPath = filePath ? `${filePath}${fileName}` : fileName;
+
+            try {
+                const response = await fetch('file/create-file', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': authToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ path: fullPath })
+                });
+
+                if (!response.ok) throw new Error('Failed to create file');
+
+                const modal = mdb.Modal.getInstance(document.getElementById('newFileModal'));
+                modal.hide();
+
+                updateStatus('File created successfully', 'success');
+                refreshTree();
+                
+                // Open the new file
+                setTimeout(() => openFile(fullPath), 500);
+
+            } catch (error) {
+                console.error('Error creating file:', error);
+                alert('Failed to create file: ' + error.message);
+            }
+        }
+
+        async function createNewFolder() {
+            const folderName = document.getElementById('newFolderName').value.trim();
+            const folderPath = document.getElementById('newFolderPath').value.trim();
+
+            if (!folderName) {
+                alert('Please enter a folder name');
+                return;
+            }
+
+            const fullPath = folderPath ? `${folderPath}${folderName}` : folderName;
+
+            try {
+                const response = await fetch('file/create-folder', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': authToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ path: fullPath })
+                });
+
+                if (!response.ok) throw new Error('Failed to create folder');
+
+                const modal = mdb.Modal.getInstance(document.getElementById('newFolderModal'));
+                modal.hide();
+
+                updateStatus('Folder created successfully', 'success');
+                refreshTree();
+
+            } catch (error) {
+                console.error('Error creating folder:', error);
+                alert('Failed to create folder: ' + error.message);
+            }
+        }
+
+        /* ================== UI HELPERS ================== */
+        function updateStatus(message, type = 'info') {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+            
+            if (type === 'success') {
+                statusEl.style.color = 'var(--success)';
+            } else if (type === 'error') {
+                statusEl.style.color = 'var(--error)';
+            } else {
+                statusEl.style.color = 'var(--text-secondary)';
+            }
+
+            if (type !== 'info') {
+                setTimeout(() => {
+                    statusEl.textContent = 'Ready';
+                    statusEl.style.color = 'var(--text-secondary)';
+                }, 3000);
+            }
+        }
+
+        function updateCursorPosition() {
+            const editor = document.getElementById('codeEditor');
+            if (!editor) return;
+
+            const pos = editor.selectionStart;
+            const text = editor.value.substring(0, pos);
+            const lines = text.split('\n');
+            const line = lines.length;
+            const col = lines[lines.length - 1].length + 1;
+
+            document.getElementById('cursorPosition').textContent = `Ln ${line}, Col ${col}`;
+        }
+
+        function updateFileStats() {
+            if (!activeFile) {
+                document.getElementById('fileStats').textContent = '';
+                return;
+            }
+
+            const fileData = openFiles.get(activeFile);
+            const lines = fileData.content.split('\n').length;
+            const chars = fileData.content.length;
+
+            document.getElementById('fileStats').textContent = `${lines} lines, ${chars} characters`;
+        }
+
+        /* ================== BOOKMARKS ================== */
+        function loadBookmarks() {
+            const saved = localStorage.getItem('zab-ide-bookmarks');
+            if (saved) {
+                try {
+                    bookmarks = JSON.parse(saved);
+                    renderBookmarks();
+                } catch (e) {
+                    bookmarks = [];
+                }
+            }
+        }
+
+        function saveBookmarks() {
+            localStorage.setItem('zab-ide-bookmarks', JSON.stringify(bookmarks));
+        }
+
+        function isBookmarked(path) {
+            return bookmarks.some(b => b.path === path);
+        }
+
+        function toggleBookmark(path, name) {
+            const index = bookmarks.findIndex(b => b.path === path);
+            if (index >= 0) {
+                bookmarks.splice(index, 1);
+            } else {
+                bookmarks.push({ path, name });
+            }
+            saveBookmarks();
+            renderBookmarks();
+        }
+
+        function renderBookmarks() {
+            const container = document.getElementById('bookmarksContent');
+            
+            if (bookmarks.length === 0) {
+                container.innerHTML = `
+                    <div class="bookmarks-empty">
+                        <i class="fas fa-star"></i>
+                        <p>No bookmarks yet</p>
+                        <p style="margin-top: 5px;">Click the star icon next to files to bookmark them</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            bookmarks.forEach(bookmark => {
+                const item = document.createElement('div');
+                item.className = 'bookmark-item';
+                
+                item.innerHTML = `
+                    <i class="fas fa-star bookmark-icon"></i>
+                    <div class="bookmark-info">
+                        <div class="bookmark-name">${bookmark.name}</div>
+                        <div class="bookmark-path">${bookmark.path}</div>
+                    </div>
+                    <i class="fas fa-times bookmark-remove" onclick="removeBookmark('${bookmark.path}', event)"></i>
+                `;
+
+                item.onclick = (e) => {
+                    if (!e.target.classList.contains('bookmark-remove')) {
+                        openFile(bookmark.path);
+                    }
+                };
+
+                container.appendChild(item);
+            });
+        }
+
+        function removeBookmark(path, event) {
+            event.stopPropagation();
+            toggleBookmark(path, '');
+            // Update tree item if visible
+            const treeItem = document.querySelector(`.tree-node[data-path="${path}"] .tree-action-btn`);
+            if (treeItem) {
+                treeItem.classList.remove('bookmarked');
+            }
+        }
+
+        function toggleBookmarksPanel() {
+            const panel = document.getElementById('bookmarksPanel');
+            const toggle = document.getElementById('bookmarksToggle');
+            
+            if (panel.classList.contains('open')) {
+                panel.classList.remove('open');
+                toggle.classList.remove('hidden');
+            } else {
+                panel.classList.add('open');
+                toggle.classList.add('hidden');
+            }
+        }
+
+        /* ================== SEARCH ================== */
+        function initSearch() {
+            const searchInput = document.getElementById('fileSearchInput');
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                performSearch(query);
+            });
+        }
+
+        function performSearch(query) {
+            if (!query) {
+                // Show all items and collapse
+                allTreeItems.forEach(item => {
+                    item.element.style.display = '';
+                });
+                collapseAll();
+                return;
+            }
+
+            // Collect all matching paths
+            const matchingPaths = new Set();
+            
+            // Deep search through all items
+            allTreeItems.forEach(item => {
+                const matches = item.name.includes(query) || item.path.includes(query);
+                if (matches) {
+                    matchingPaths.add(item.path);
+                    // Add all parent paths
+                    let pathParts = item.path.split('/');
+                    for (let i = 1; i < pathParts.length; i++) {
+                        let parentPath = pathParts.slice(0, i).join('/');
+                        if (parentPath) matchingPaths.add(parentPath);
+                    }
+                }
+            });
+
+            // Show/hide and expand based on matches
+            allTreeItems.forEach(item => {
+                const shouldShow = matchingPaths.has(item.path);
+                item.element.style.display = shouldShow ? '' : 'none';
+                
+                // If this is a folder that should be shown, expand it
+                if (shouldShow && item.node.isDirectory) {
+                    const childrenDiv = item.element.querySelector('.tree-children');
+                    const arrow = item.element.querySelector('.tree-arrow');
+                    if (childrenDiv) {
+                        childrenDiv.classList.add('expanded');
+                    }
+                    if (arrow) {
+                        arrow.classList.add('expanded');
+                    }
+                }
+            });
+        }
+
+        function collapseAll() {
+            document.querySelectorAll('.tree-children').forEach(children => {
+                children.classList.remove('expanded');
+            });
+            document.querySelectorAll('.tree-arrow').forEach(arrow => {
+                arrow.classList.remove('expanded');
+            });
+        }
+
+        /* ================== DOWNLOAD ================== */
+        async function downloadItem(path, isDirectory) {
+            try {
+                updateStatus('Preparing download...');
+                
+                if (isDirectory) {
+                    // Download folder as ZIP
+                    window.location.href = `file/download-zip?path=${encodeURIComponent(path)}&_auth=${encodeURIComponent(authToken)}`;
+                    updateStatus('Download started', 'success');
+                } else {
+                    // Download single file
+                    window.location.href = `file/download?path=${encodeURIComponent(path)}&_auth=${encodeURIComponent(authToken)}`;
+                    updateStatus('Download started', 'success');
+                }
+            } catch (error) {
+                console.error('Download failed:', error);
+                updateStatus('Download failed', 'error');
+                alert('Failed to download: ' + error.message);
+            }
+        }
+
+        /* ================== UPLOAD ================== */
+        function showUploadModal(folderPath) {
+            const modal = new mdb.Modal(document.getElementById('uploadModal'));
+            // Ensure trailing slash
+            let path = folderPath || '';
+            if (path && !path.endsWith('/')) {
+                path += '/';
+            }
+            document.getElementById('uploadPath').value = path;
+            document.getElementById('uploadFiles').value = '';
+            document.getElementById('uploadProgress').classList.add('d-none');
+            document.getElementById('uploadBtn').disabled = false;
+            modal.show();
+        }
+
+        async function uploadFiles() {
+            const filesInput = document.getElementById('uploadFiles');
+            const files = filesInput.files;
+            const uploadPath = document.getElementById('uploadPath').value;
+
+            if (files.length === 0) {
+                alert('Please select files to upload');
+                return;
+            }
+
+            const uploadBtn = document.getElementById('uploadBtn');
+            const progressDiv = document.getElementById('uploadProgress');
+            const progressBar = document.getElementById('uploadProgressBar');
+            const statusText = document.getElementById('uploadStatus');
+
+            uploadBtn.disabled = true;
+            progressDiv.classList.remove('d-none');
+
+            try {
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const progress = ((i / files.length) * 100).toFixed(0);
+                    
+                    progressBar.style.width = progress + '%';
+                    progressBar.textContent = progress + '%';
+                    statusText.textContent = `Uploading ${i + 1} of ${files.length}: ${file.name}`;
+
+                    // Read file content
+                    //const content = await readFileAsText(file);
+                    const formData = new FormData();
+                    formData.append("files", files[i]);
+                    formData.append("path", uploadPath);
+                    
+                    // Upload to server
+                    const response = await fetch('file/write', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': authToken,
+                        },
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Failed to upload ${file.name}`);
+                    }
+                }
+
+                // Complete
+                progressBar.style.width = '100%';
+                progressBar.textContent = '100%';
+                statusText.textContent = 'Upload complete!';
+
+                setTimeout(() => {
+                    const modal = mdb.Modal.getInstance(document.getElementById('uploadModal'));
+                    modal.hide();
+                    updateStatus('Files uploaded successfully', 'success');
+                    refreshTree();
+                }, 1000);
+
+            } catch (error) {
+                console.error('Upload failed:', error);
+                alert('Upload failed: ' + error.message);
+                uploadBtn.disabled = false;
+            }
+        }
+
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = (e) => reject(new Error('Failed to read file'));
+                reader.readAsText(file);
+            });
+        }
+
+        /* ================== KEYBOARD SHORTCUTS ================== */
+        function initKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                // Ctrl+S or Cmd+S - Save
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    e.preventDefault();
+                    if (activeFile && openFiles.get(activeFile).modified) {
+                        saveFile();
+                    }
+                }
+
+                // Ctrl+W or Cmd+W - Close tab
+                if ((e.ctrlKey || e.metaKey) && e.key === 'w') {
+                    e.preventDefault();
+                    if (activeFile) {
+                        closeTab(activeFile);
+                    }
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZAB IDE - ERP Development Environment</title>
+    
+    <!-- Material Design Bootstrap Pro -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.4.2/mdb.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Monaco Editor (VS Code editor) -->
+    <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/editor/editor.main.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Crimson+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-dark: #0a0e27;
+            --secondary-dark: #151b38;
+            --accent-dark: #1e2749;
+            --highlight: #00d9ff;
+            --success: #00ff88;
+            --warning: #ffaa00;
+            --danger: #ff3366;
+            --text-primary: #e8eaf6;
+            --text-secondary: #9fa8da;
+            --border-color: #283593;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary-dark) 100%);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        /* Header */
+        .ide-header {
+            background: linear-gradient(90deg, var(--secondary-dark) 0%, var(--accent-dark) 100%);
+            border-bottom: 2px solid var(--highlight);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0, 217, 255, 0.2);
+        }
+        
+        .ide-logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .ide-logo h1 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--highlight) 0%, var(--success) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 1px;
+            text-shadow: 0 0 20px rgba(0, 217, 255, 0.3);
+        }
+        
+        .ide-logo .version {
+            background: var(--accent-dark);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--highlight);
+            border: 1px solid var(--border-color);
+        }
+        
+        .quick-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+        
+        .action-btn {
+            background: var(--accent-dark);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .action-btn:hover {
+            background: var(--highlight);
+            color: var(--primary-dark);
+            border-color: var(--highlight);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 217, 255, 0.4);
+        }
+        
+        .action-btn.danger {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+        
+        .action-btn.danger:hover {
+            background: var(--danger);
+            color: white;
+            border-color: var(--danger);
+        }
+        
+        .action-btn.success {
+            border-color: var(--success);
+            color: var(--success);
+        }
+        
+        .action-btn.success:hover {
+            background: var(--success);
+            color: var(--primary-dark);
+            border-color: var(--success);
+        }
+        
+        /* Main Layout */
+        .ide-container {
+            display: flex;
+            height: calc(100vh - 70px);
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            background: var(--secondary-dark);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .sidebar-tabs {
+            display: flex;
+            background: var(--accent-dark);
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .sidebar-tab {
+            flex: 1;
+            padding: 0.75rem;
+            text-align: center;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+        }
+        
+        .sidebar-tab.active {
+            border-bottom-color: var(--highlight);
+            background: var(--secondary-dark);
+            color: var(--highlight);
+        }
+        
+        .sidebar-tab:hover:not(.active) {
+            background: var(--secondary-dark);
+            color: var(--text-primary);
+        }
+        
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        
+        /* File Tree */
+        .folder-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .folder-header {
+            background: var(--accent-dark);
+            padding: 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            margin-bottom: 0.5rem;
+        }
+        
+        .folder-header:hover {
+            background: var(--border-color);
+            border-color: var(--highlight);
+        }
+        
+        .folder-header i {
+            color: var(--warning);
+        }
+        
+        .folder-name {
+            flex: 1;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .file-list {
+            padding-left: 1.5rem;
+            display: none;
+        }
+        
+        .file-list.expanded {
+            display: block;
+        }
+        
+        .file-item {
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+            margin: 0.25rem 0;
+        }
+        
+        .file-item:hover {
+            background: var(--accent-dark);
+            color: var(--highlight);
+        }
+        
+        .file-item.active {
+            background: var(--highlight);
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+        
+        .file-item i {
+            font-size: 0.9rem;
+        }
+        
+        /* Main Editor Area */
+        .editor-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--primary-dark);
+        }
+        
+        .editor-tabs {
+            background: var(--secondary-dark);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            overflow-x: auto;
+            padding: 0.5rem 0.5rem 0;
+        }
+        
+        .editor-tab {
+            background: var(--accent-dark);
+            padding: 0.5rem 1rem;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            margin-right: 0.25rem;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            font-size: 0.85rem;
+        }
+        
+        .editor-tab.active {
+            background: var(--primary-dark);
+            color: var(--highlight);
+            border-color: var(--highlight);
+        }
+        
+        .editor-tab:hover:not(.active) {
+            background: var(--border-color);
+        }
+        
+        .editor-tab .close-tab {
+            margin-left: 0.5rem;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        
+        .editor-tab .close-tab:hover {
+            opacity: 1;
+            color: var(--danger);
+        }
+        
+        .editor-content {
+            flex: 1;
+            background: #1e1e1e;
+            position: relative;
+        }
+        
+        #monaco-editor {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Right Panel (Preview/Database) */
+        .right-panel {
+            width: 400px;
+            background: var(--secondary-dark);
+            border-left: 1px solid var(--border-color);
+            display: none;
+            flex-direction: column;
+        }
+        
+        .right-panel.active {
+            display: flex;
+        }
+        
+        .panel-header {
+            background: var(--accent-dark);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .panel-header h3 {
+            font-size: 1rem;
+            color: var(--highlight);
+        }
+        
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        
+        /* Database Query Panel */
+        .query-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .query-input {
+            background: var(--primary-dark);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            resize: vertical;
+            min-height: 120px;
+        }
+        
+        .query-input:focus {
+            outline: none;
+            border-color: var(--highlight);
+            box-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
+        }
+        
+        .query-results {
+            background: var(--primary-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 1rem;
+            max-height: 300px;
+            overflow: auto;
+            font-size: 0.8rem;
+        }
+        
+        /* Preview iframe */
+        #preview-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+        
+        /* Status Bar */
+        .status-bar {
+            background: var(--accent-dark);
+            border-top: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 14, 39, 0.9);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: var(--secondary-dark);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-header {
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-header h2 {
+            color: var(--highlight);
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .modal-body {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .form-control {
+            width: 100%;
+            background: var(--primary-dark);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--highlight);
+            box-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
+        }
+        
+        .modal-footer {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--primary-dark);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--highlight);
+        }
+        
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                transform: translateX(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .file-item, .folder-header {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            border: 3px solid var(--accent-dark);
+            border-top: 3px solid var(--highlight);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="ide-header">
+        <div class="ide-logo">
+            <h1>⚡ ZAB IDE</h1>
+            <span class="version">v1.0.0</span>
+        </div>
+        
+        <div class="quick-actions">
+            <button class="action-btn success" onclick="compileJava()">
+                <i class="fas fa-code"></i> Compile
+            </button>
+            <button class="action-btn" onclick="togglePreview()">
+                <i class="fas fa-eye"></i> Preview
+            </button>
+            <button class="action-btn" onclick="openCompressModal()">
+                <i class="fas fa-file-archive"></i> Export
+            </button>
+            <button class="action-btn danger" onclick="restartServer()">
+                <i class="fas fa-sync"></i> Restart Server
+            </button>
+            <button class="action-btn" onclick="toggleDatabase()">
+                <i class="fas fa-database"></i> Database
+            </button>
+        </div>
+    </header>
+    
+    <!-- Main Container -->
+    <div class="ide-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-tabs">
+                <div class="sidebar-tab active" onclick="switchSidebarTab('explorer')">
+                    <i class="fas fa-folder-tree"></i> Explorer
+                </div>
+                <div class="sidebar-tab" onclick="switchSidebarTab('search')">
+                    <i class="fas fa-magnifying-glass"></i> Search
+                </div>
+            </div>
+            
+            <div class="sidebar-content" id="explorer-content">
+                <!-- Resources Folder -->
+                <div class="folder-group">
+                    <div class="folder-header" onclick="toggleFolder(this)">
+                        <i class="fas fa-folder"></i>
+                        <span class="folder-name">resource/</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="file-list">
+                        <div class="file-item" onclick="openFile('resource/config.properties')">
+                            <i class="fas fa-file-code"></i> config.properties
+                        </div>
+                        <div class="file-item" onclick="openFile('resource/messages.properties')">
+                            <i class="fas fa-file-code"></i> messages.properties
+                        </div>
+                        <div class="file-item" onclick="openFile('resource/menu.txt')">
+                            <i class="fas fa-file-lines"></i> menu.txt
+                        </div>
+                        <div class="file-item" onclick="openFile('resource/screen.txt')">
+                            <i class="fas fa-file-lines"></i> screen.txt
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Classes Folder -->
+                <div class="folder-group">
+                    <div class="folder-header" onclick="toggleFolder(this)">
+                        <i class="fas fa-folder"></i>
+                        <span class="folder-name">classes/zaberp/zab/</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="file-list">
+                        <div class="file-item" onclick="openFile('classes/MainController.java')">
+                            <i class="fab fa-java"></i> MainController.java
+                        </div>
+                        <div class="file-item" onclick="openFile('classes/DataService.java')">
+                            <i class="fab fa-java"></i> DataService.java
+                        </div>
+                        <div class="file-item" onclick="openFile('classes/Utils.java')">
+                            <i class="fab fa-java"></i> Utils.java
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Reports Folder -->
+                <div class="folder-group">
+                    <div class="folder-header" onclick="toggleFolder(this)">
+                        <i class="fas fa-folder"></i>
+                        <span class="folder-name">reports/</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="file-list">
+                        <div class="file-item" onclick="downloadReport('sales_report.rpt')">
+                            <i class="fas fa-file-pdf"></i> sales_report.rpt
+                        </div>
+                        <div class="file-item" onclick="downloadReport('inventory.rpt')">
+                            <i class="fas fa-file-pdf"></i> inventory.rpt
+                        </div>
+                        <div class="file-item" onclick="uploadReport()">
+                            <i class="fas fa-upload"></i> Upload New Report
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- zab.sys -->
+                <div class="folder-group">
+                    <div class="folder-header" onclick="toggleFolder(this)">
+                        <i class="fas fa-folder"></i>
+                        <span class="folder-name">config/</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="file-list">
+                        <div class="file-item" onclick="openFile('config/zab.sys')">
+                            <i class="fas fa-cog"></i> zab.sys
+                        </div>
+                        <div class="file-item" onclick="openFile('config/web.xml')">
+                            <i class="fas fa-file-code"></i> web.xml
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- SQL Folder -->
+                <div class="folder-group">
+                    <div class="folder-header" onclick="toggleFolder(this)">
+                        <i class="fas fa-folder"></i>
+                        <span class="folder-name">sql/</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="file-list">
+                        <div class="file-item" onclick="openFile('sql/schema.sql')">
+                            <i class="fas fa-database"></i> schema.sql
+                        </div>
+                        <div class="file-item" onclick="openFile('sql/procedures.sql')">
+                            <i class="fas fa-database"></i> procedures.sql
+                        </div>
+                        <div class="file-item" onclick="openFile('sql/tables.txt')">
+                            <i class="fas fa-table"></i> tables.txt
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Editor Area -->
+        <main class="editor-area">
+            <div class="editor-tabs" id="editorTabs">
+                <div class="editor-tab active">
+                    <i class="fas fa-home"></i>
+                    <span>Welcome</span>
+                </div>
+            </div>
+            
+            <div class="editor-content">
+                <div id="monaco-editor"></div>
+            </div>
+            
+            <div class="status-bar">
+                <div class="status-item">
+                    <span class="status-indicator"></span>
+                    <span>Server: Running</span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-server"></i>
+                    <span>Tomcat 9.0</span>
+                </div>
+                <div class="status-item">
+                    <i class="fab fa-java"></i>
+                    <span>Java 8</span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-database"></i>
+                    <span>SQL Server</span>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Right Panel (Preview/Database) -->
+        <aside class="right-panel" id="rightPanel">
+            <div class="panel-header">
+                <h3 id="panelTitle">Preview</h3>
+                <button class="action-btn" onclick="closeRightPanel()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="panel-content" id="panelContent">
+                <iframe id="preview-frame" src="about:blank"></iframe>
+            </div>
+        </aside>
+    </div>
+    
+    <!-- Compress/Export Modal -->
+    <div class="modal-overlay" id="compressModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-file-archive"></i> Export Folder</h2>
+                <p style="color: var(--text-secondary); font-size: 0.9rem;">Select a folder to compress and download</p>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Select Folder:</label>
+                    <select class="form-control" id="folderSelect">
+                        <option value="resource">resource/</option>
+                        <option value="classes">classes/zaberp/zab/</option>
+                        <option value="reports">reports/</option>
+                        <option value="config">config/</option>
+                        <option value="sql">sql/</option>
+                        <option value="all">All Folders</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn" onclick="closeCompressModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="action-btn success" onclick="compressFolder()">
+                    <i class="fas fa-download"></i> Download
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Upload Report Modal -->
+    <div class="modal-overlay" id="uploadModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-upload"></i> Upload Crystal Report</h2>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Select .rpt File:</label>
+                    <input type="file" class="form-control" id="reportFile" accept=".rpt">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="action-btn" onclick="closeUploadModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="action-btn success" onclick="uploadReportFile()">
+                    <i class="fas fa-upload"></i> Upload
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/6.4.2/mdb.min.js"></script>
+    
+    <!-- Monaco Editor Loader -->
+    <script>
+        var require = { paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } };
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/editor/editor.main.nls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/editor/editor.main.js"></script>
+    
+    <script>
+        let editor;
+        let openTabs = [];
+        let currentFile = null;
+        
+        // Initialize Monaco Editor
+        require(['vs/editor/editor.main'], function () {
+            editor = monaco.editor.create(document.getElementById('monaco-editor'), {
+                value: [
+                    '/**',
+                    ' * Welcome to ZAB IDE',
+                    ' * Your ERP Development Environment',
+                    ' * ',
+                    ' * Quick Start:',
+                    ' * 1. Browse files in the left sidebar',
+                    ' * 2. Click on a file to open it',
+                    ' * 3. Edit and save your changes',
+                    ' * 4. Compile Java files with the Compile button',
+                    ' * 5. Preview your application with the Preview button',
+                    ' * ',
+                    ' * Features:',
+                    ' * - File Explorer with folder structure',
+                    ' * - Syntax highlighting for Java, SQL, and config files',
+                    ' * - Database query interface',
+                    ' * - Crystal Reports upload/download',
+                    ' * - Server restart functionality',
+                    ' * - Export folders as ZIP',
+                    ' */',
+                    '',
+                    '// Start exploring your ZAB framework!'
+                ].join('\n'),
+                language: 'javascript',
+                theme: 'vs-dark',
+                automaticLayout: true,
+                fontSize: 14,
+                fontFamily: 'JetBrains Mono',
+                minimap: { enabled: true },
+                scrollBeyondLastLine: false,
+                renderWhitespace: 'selection',
+                lineNumbers: 'on',
+                folding: true,
+                matchBrackets: 'always'
+            });
+        });
+        
+        // File operations
+        function toggleFolder(element) {
+            const fileList = element.nextElementSibling;
+            const chevron = element.querySelector('.fa-chevron-down, .fa-chevron-right');
+            
+            fileList.classList.toggle('expanded');
+            
+            if (fileList.classList.contains('expanded')) {
+                chevron.classList.remove('fa-chevron-right');
+                chevron.classList.add('fa-chevron-down');
+            } else {
+                chevron.classList.remove('fa-chevron-down');
+                chevron.classList.add('fa-chevron-right');
+            }
+        }
+        
+        function openFile(filepath) {
+            // Remove active class from all file items
+            document.querySelectorAll('.file-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Add active class to clicked item
+            event.currentTarget.classList.add('active');
+            
+            // Get file extension to determine language
+            const ext = filepath.split('.').pop();
+            let language = 'plaintext';
+            let content = '';
+            
+            switch(ext) {
+                case 'java':
+                    language = 'java';
+                    content = getSampleJavaCode(filepath);
+                    break;
+                case 'sql':
+                    language = 'sql';
+                    content = getSampleSQLCode(filepath);
+                    break;
+                case 'xml':
+                    language = 'xml';
+                    content = getSampleXMLCode(filepath);
+                    break;
+                case 'properties':
+                    language = 'ini';
+                    content = getSamplePropertiesCode(filepath);
+                    break;
+                case 'txt':
+                    language = 'plaintext';
+                    content = getSampleTextCode(filepath);
+                    break;
+                case 'sys':
+                    language = 'ini';
+                    content = getSampleSysConfig(filepath);
+                    break;
+            }
+            
+            // Update editor
+            monaco.editor.setModelLanguage(editor.getModel(), language);
+            editor.setValue(content);
+            
+            // Add tab if not already open
+            if (!openTabs.includes(filepath)) {
+                openTabs.push(filepath);
+                addEditorTab(filepath);
+            }
+            
+            currentFile = filepath;
+            setActiveTab(filepath);
+        }
+        
+        function addEditorTab(filepath) {
+            const tabsContainer = document.getElementById('editorTabs');
+            const filename = filepath.split('/').pop();
+            const icon = getFileIcon(filepath);
+            
+            const tab = document.createElement('div');
+            tab.className = 'editor-tab';
+            tab.dataset.filepath = filepath;
+            tab.innerHTML = `
+                <i class="${icon}"></i>
+                <span>${filename}</span>
+                <i class="fas fa-times close-tab" onclick="closeTab('${filepath}', event)"></i>
+            `;
+            tab.onclick = (e) => {
+                if (!e.target.classList.contains('close-tab')) {
+                    openFile(filepath);
+                }
+            };
+            
+            tabsContainer.appendChild(tab);
+        }
+        
+        function setActiveTab(filepath) {
+            document.querySelectorAll('.editor-tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.dataset.filepath === filepath) {
+                    tab.classList.add('active');
+                }
+            });
+        }
+        
+        function closeTab(filepath, event) {
+            event.stopPropagation();
+            
+            const index = openTabs.indexOf(filepath);
+            if (index > -1) {
+                openTabs.splice(index, 1);
+            }
+            
+            const tab = document.querySelector(`[data-filepath="${filepath}"]`);
+            if (tab) {
+                tab.remove();
+            }
+            
+            // If closed tab was active, open another tab
+            if (currentFile === filepath && openTabs.length > 0) {
+                openFile(openTabs[openTabs.length - 1]);
+            } else if (openTabs.length === 0) {
+                editor.setValue('// No file open');
+            }
+        }
+        
+        function getFileIcon(filepath) {
+            const ext = filepath.split('.').pop();
+            switch(ext) {
+                case 'java': return 'fab fa-java';
+                case 'sql': return 'fas fa-database';
+                case 'xml': return 'fas fa-file-code';
+                case 'properties': return 'fas fa-file-code';
+                case 'txt': return 'fas fa-file-lines';
+                case 'sys': return 'fas fa-cog';
+                case 'rpt': return 'fas fa-file-pdf';
+                default: return 'fas fa-file';
+            }
+        }
+        
+        // Sample code generators
+        function getSampleJavaCode(filepath) {
+            const className = filepath.split('/').pop().replace('.java', '');
+            return `package zaberp.zab;
+
+import javax.servlet.http.*;
+import java.sql.*;
+import java.util.*;
+
+/**
+ * ${className} - ZAB ERP Component
+ * Auto-generated template
+ */
+public class ${className} extends HttpServlet {
+    
+    private static final long serialVersionUID = 1L;
+    
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+        
+        // TODO: Implement GET logic
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        
+        // Your code here
+        
+    }
+    
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+        
+        // TODO: Implement POST logic
+        
+    }
+    
+    // Helper methods
+    private Connection getDBConnection() throws SQLException {
+        // Load connection from zab.sys
+        return null;
+    }
+}`;
+        }
+        
+        function getSampleSQLCode(filepath) {
+            if (filepath.includes('schema')) {
+                return `-- ZAB ERP Database Schema
+-- SQL Server Compatible
+
+CREATE TABLE users (
+    user_id INT PRIMARY KEY IDENTITY(1,1),
+    username NVARCHAR(50) NOT NULL UNIQUE,
+    password_hash NVARCHAR(255) NOT NULL,
+    email NVARCHAR(100),
+    created_date DATETIME DEFAULT GETDATE(),
+    is_active BIT DEFAULT 1
+);
+
+CREATE TABLE roles (
+    role_id INT PRIMARY KEY IDENTITY(1,1),
+    role_name NVARCHAR(50) NOT NULL,
+    description NVARCHAR(255)
+);
+
+CREATE TABLE user_roles (
+    user_id INT,
+    role_id INT,
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (role_id) REFERENCES roles(role_id),
+    PRIMARY KEY (user_id, role_id)
+);
+
+-- Add your tables here`;
+            } else {
+                return `-- ZAB ERP Stored Procedures
+
+CREATE PROCEDURE sp_GetUserData
+    @userId INT
+AS
+BEGIN
+    SELECT 
+        u.user_id,
+        u.username,
+        u.email,
+        r.role_name
+    FROM users u
+    LEFT JOIN user_roles ur ON u.user_id = ur.user_id
+    LEFT JOIN roles r ON ur.role_id = r.role_id
+    WHERE u.user_id = @userId
+    AND u.is_active = 1;
+END;
+GO
+
+-- Add your procedures here`;
+            }
+        }
+        
+        function getSampleXMLCode(filepath) {
+            return `<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee 
+         http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+         version="3.1">
+    
+    <display-name>ZAB ERP Framework</display-name>
+    
+    <servlet>
+        <servlet-name>MainController</servlet-name>
+        <servlet-class>zaberp.zab.MainController</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+    
+    <servlet-mapping>
+        <servlet-name>MainController</servlet-name>
+        <url-pattern>/api/*</url-pattern>
+    </servlet-mapping>
+    
+    <!-- Add your servlets here -->
+    
+</web-app>`;
+        }
+        
+        function getSamplePropertiesCode(filepath) {
+            return `# ZAB ERP Configuration
+# ${filepath}
+
+app.name=ZAB ERP Framework
+app.version=1.0.0
+
+# Database Configuration
+db.driver=com.microsoft.sqlserver.jdbc.SQLServerDriver
+db.url=jdbc:sqlserver://localhost:1433;databaseName=zaberp
+db.username=sa
+db.password=
+
+# Application Settings
+app.timezone=Asia/Dhaka
+app.locale=en_US
+app.date.format=yyyy-MM-dd HH:mm:ss
+
+# Add your properties here`;
+        }
+        
+        function getSampleTextCode(filepath) {
+            if (filepath.includes('menu')) {
+                return `# ZAB Menu Definition
+# Format: MENU_ID|PARENT_ID|LABEL|URL|ICON|ORDER
+
+MENU001||Dashboard|/dashboard|home|1
+MENU002||Sales|/sales|shopping-cart|2
+MENU003|MENU002|Orders|/sales/orders|list|1
+MENU004|MENU002|Customers|/sales/customers|users|2
+MENU005||Inventory|/inventory|warehouse|3
+MENU006|MENU005|Items|/inventory/items|box|1
+MENU007|MENU005|Stock|/inventory/stock|chart-bar|2
+
+# Add your menu items here`;
+            } else if (filepath.includes('screen')) {
+                return `# ZAB Screen Definition
+# Format: SCREEN_ID|TITLE|TYPE|FIELDS
+
+SCR001|Customer Entry|FORM|cust_id:text,cust_name:text,email:email,phone:tel
+SCR002|Order List|GRID|order_id,order_date,customer,total,status
+SCR003|Product Search|SEARCH|product_code:text,product_name:text,category:select
+
+# Add your screen definitions here`;
+            } else {
+                return `# ZAB Table Definition
+# Format: TABLE_NAME|FIELD_NAME|TYPE|LENGTH|REQUIRED
+
+CUSTOMERS|cust_id|INT||Y
+CUSTOMERS|cust_name|VARCHAR|100|Y
+CUSTOMERS|email|VARCHAR|100|N
+CUSTOMERS|phone|VARCHAR|20|N
+CUSTOMERS|created_date|DATETIME||Y
+
+ORDERS|order_id|INT||Y
+ORDERS|cust_id|INT||Y
+ORDERS|order_date|DATETIME||Y
+ORDERS|total_amount|DECIMAL|10,2|Y
+ORDERS|status|VARCHAR|20|Y
+
+# Add your table definitions here`;
+            }
+        }
+        
+        function getSampleSysConfig(filepath) {
+            return `# ZAB System Configuration
+# DO NOT SHARE THIS FILE - Contains sensitive information
+
+[DATABASE]
+driver=com.microsoft.sqlserver.jdbc.SQLServerDriver
+url=jdbc:sqlserver://localhost:1433;databaseName=zaberp_db
+username=zab_user
+password=your_password_here
+pool.size=20
+pool.timeout=30000
+
+[APPLICATION]
+name=ZAB ERP
+version=1.0.0
+environment=development
+debug=true
+log.level=INFO
+
+[SECURITY]
+session.timeout=3600
+encryption.key=your_encryption_key_here
+jwt.secret=your_jwt_secret_here
+
+[EMAIL]
+smtp.host=smtp.gmail.com
+smtp.port=587
+smtp.user=noreply@zaberp.com
+smtp.password=
+
+[PATHS]
+upload.dir=/uploads
+temp.dir=/temp
+reports.dir=/WEB-INF/reports
+
+# Add your configuration here`;
+        }
+        
+        // Quick actions
+        function compileJava() {
+            if (!currentFile || !currentFile.endsWith('.java')) {
+                alert('Please open a Java file first');
+                return;
+            }
+            
+            // Show compilation message
+            const statusBar = document.querySelector('.status-bar');
+            const compileMsg = document.createElement('div');
+            compileMsg.className = 'status-item';
+            compileMsg.innerHTML = '<div class="spinner"></div> <span>Compiling...</span>';
+            statusBar.appendChild(compileMsg);
+            
+            // Simulate compilation
+            setTimeout(() => {
+                compileMsg.innerHTML = '<i class="fas fa-check" style="color: var(--success)"></i> <span>Compilation successful!</span>';
+                setTimeout(() => compileMsg.remove(), 3000);
+            }, 2000);
+        }
+        
+        function togglePreview() {
+            const rightPanel = document.getElementById('rightPanel');
+            const panelTitle = document.getElementById('panelTitle');
+            const panelContent = document.getElementById('panelContent');
+            
+            rightPanel.classList.toggle('active');
+            panelTitle.textContent = 'ZAB Framework Preview';
+            panelContent.innerHTML = '<iframe id="preview-frame" src="/zab/login"></iframe>';
+        }
+        
+        function toggleDatabase() {
+            const rightPanel = document.getElementById('rightPanel');
+            const panelTitle = document.getElementById('panelTitle');
+            const panelContent = document.getElementById('panelContent');
+            
+            rightPanel.classList.toggle('active');
+            panelTitle.textContent = 'Database Query';
+            panelContent.innerHTML = `
+                <div class="query-panel">
+                    <textarea class="query-input" placeholder="Enter SQL query...">SELECT * FROM users WHERE is_active = 1;</textarea>
+                    <button class="action-btn success" onclick="executeQuery()">
+                        <i class="fas fa-play"></i> Execute Query
+                    </button>
+                    <div class="query-results" id="queryResults">
+                        <p style="color: var(--text-secondary)">Query results will appear here...</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function executeQuery() {
+            const resultsDiv = document.getElementById('queryResults');
+            resultsDiv.innerHTML = '<div class="spinner"></div> Executing query...';
+            
+            // Simulate query execution
+            setTimeout(() => {
+                resultsDiv.innerHTML = `
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <th style="padding: 0.5rem; text-align: left;">user_id</th>
+                                <th style="padding: 0.5rem; text-align: left;">username</th>
+                                <th style="padding: 0.5rem; text-align: left;">email</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <td style="padding: 0.5rem;">1</td>
+                                <td style="padding: 0.5rem;">admin</td>
+                                <td style="padding: 0.5rem;">admin@zaberp.com</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 0.5rem;">2</td>
+                                <td style="padding: 0.5rem;">user1</td>
+                                <td style="padding: 0.5rem;">user1@zaberp.com</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p style="margin-top: 1rem; color: var(--success);">✓ Query executed successfully - 2 rows returned</p>
+                `;
+            }, 1500);
+        }
+        
+        function closeRightPanel() {
+            document.getElementById('rightPanel').classList.remove('active');
+        }
+        
+        function restartServer() {
+            if (!confirm('Are you sure you want to restart the Tomcat server?')) {
+                return;
+            }
+            
+            const statusBar = document.querySelector('.status-bar');
+            const restartMsg = document.createElement('div');
+            restartMsg.className = 'status-item';
+            restartMsg.innerHTML = '<div class="spinner"></div> <span>Restarting server...</span>';
+            statusBar.appendChild(restartMsg);
+            
+            // Simulate server restart (toggle web.xml)
+            setTimeout(() => {
+                restartMsg.innerHTML = '<i class="fas fa-check" style="color: var(--success)"></i> <span>Server restarted successfully!</span>';
+                setTimeout(() => restartMsg.remove(), 3000);
+            }, 3000);
+        }
+        
+        // Modal functions
+        function openCompressModal() {
+            document.getElementById('compressModal').classList.add('active');
+        }
+        
+        function closeCompressModal() {
+            document.getElementById('compressModal').classList.remove('active');
+        }
+        
+        function compressFolder() {
+            const folder = document.getElementById('folderSelect').value;
+            alert(`Compressing ${folder}... Download will start shortly.`);
+            closeCompressModal();
+            
+            // In real implementation, this would trigger a backend call to compress and download
+        }
+        
+        function uploadReport() {
+            document.getElementById('uploadModal').classList.add('active');
+        }
+        
+        function closeUploadModal() {
+            document.getElementById('uploadModal').classList.remove('active');
+        }
+        
+        function uploadReportFile() {
+            const fileInput = document.getElementById('reportFile');
+            if (!fileInput.files.length) {
+                alert('Please select a file');
+                return;
+            }
+            
+            alert('Uploading ' + fileInput.files[0].name + '...');
+            closeUploadModal();
+            
+            // In real implementation, this would upload the file
+        }
+        
+        function downloadReport(filename) {
+            alert('Downloading ' + filename + '...');
+            // In real implementation, this would download the report
+        }
+        
+        function switchSidebarTab(tab) {
+            // This would switch between Explorer and Search tabs
+            // For now, just update active state
+            document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+    </script>
+</body>
+</html>

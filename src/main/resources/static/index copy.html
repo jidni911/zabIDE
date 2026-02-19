@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ZAB IDE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="/mdbpro/mdbpro.css" rel="stylesheet">
+    <script src="/mdbpro/mdbpro.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        /* Login Modal */
+        .login-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        .login-modal.active {
+            display: flex;
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 420px;
+            width: 100%;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-header h2 {
+            color: #667eea;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .login-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-control {
+            border-radius: 10px;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: 600;
+            color: white;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-cancel {
+            background: #6c757d;
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: 600;
+            color: white;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        /* Main App */
+        .sidebar {
+            height: 100vh;
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 0;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            /* width: auto; */
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 30px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header h4 {
+            font-weight: 700;
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .sidebar-header small {
+            opacity: 0.7;
+            font-size: 12px;
+        }
+
+        .sidebar-nav {
+            padding: 20px 0;
+        }
+
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 15px 25px;
+            margin: 5px 15px;
+            border-radius: 10px;
+            transition: all 0.3s;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .sidebar .nav-link.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .content {
+            padding: 40px;
+            min-height: 100vh;
+            background: #f8f9fa;
+        }
+
+        .content-header {
+            margin-bottom: 30px;
+        }
+
+        .content-header h3 {
+            color: #2c3e50;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .content-header p {
+            color: #7f8c8d;
+            margin: 0;
+        }
+
+        .file-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+        }
+
+        .file-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .file-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .drop-zone {
+            border: 3px dashed #667eea;
+            border-radius: 20px;
+            padding: 60px 40px;
+            background: white;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .drop-zone:hover::before,
+        .drop-zone.dragover::before {
+            opacity: 1;
+        }
+
+        .drop-zone.dragover {
+            border-color: #764ba2;
+            transform: scale(1.02);
+        }
+
+        .drop-zone-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .progress {
+            height: 30px;
+            border-radius: 15px;
+            background: #e9ecef;
+            overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upload-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn-control {
+            flex: 1;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: 600;
+            border: none;
+            transition: all 0.3s;
+        }
+
+        .btn-control:hover {
+            transform: translateY(-2px);
+        }
+
+        .stats-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .stats-card h5 {
+            color: #2c3e50;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .speed-display {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .status-text {
+            padding: 12px 20px;
+            border-radius: 10px;
+            background: #e3f2fd;
+            color: #1976d2;
+            text-align: center;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+
+            .content {
+                margin-left: 0;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- LOGIN MODAL -->
+    <div id="loginModal" class="login-modal">
+        <div class="login-card">
+            <div class="login-header">
+                <h2>🔐 Login Required</h2>
+                <p>Please login to upload files</p>
+            </div>
+            <form id="loginForm">
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <input type="text" id="username" class="form-control" placeholder="Enter username" required>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="password" class="form-control" placeholder="Enter password" required>
+                </div>
+                <div id="loginError" class="alert alert-danger d-none" role="alert"></div>
+                <button type="submit" class="btn btn-login">Sign In</button>
+                <button type="button" class="btn btn-cancel" onclick="closeLoginModal()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 p-0">
+                <div class="sidebar col-md-3 col-lg-2 p-0">
+                    <div class="sidebar-header">
+                        <h4>ZAB FTP</h4>
+                        <small>File Transfer Protocol</small>
+                    </div>
+                    <div class="sidebar-nav">
+                        <a class="nav-link active" data-tab="filesTab">
+                            📂 My Files
+                        </a>
+                        <a class="nav-link" data-tab="uploadTab">
+                            ⬆️ Upload
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 p-0">
+                <div class="content">
+
+                    <!-- FILE LIST TAB -->
+                    <div id="filesTab" class="tab">
+                        <div id="progressBox" style="display:none; margin-top:20px">
+                            <div class="progress">
+                                <div id="progressBar2" class="progress-bar" style="width:0%"></div>
+                            </div>
+                            <div class="mt-2">
+                                <span id="speed">0 MB/s</span> |
+                                <span id="eta">ETA: --</span>
+                            </div>
+                        </div>
+                        <div class="content-header">
+                            <h3>My Files</h3>
+                            <p>Browse and download uploaded files</p>
+                        </div>
+                        <div id="fileList"></div>
+                    </div>
+
+                    <!-- UPLOAD TAB -->
+                    <div id="uploadTab" class="tab d-none">
+                        <div class="content-header">
+                            <h3>Upload Files</h3>
+                            <p>Upload new files to the server</p>
+                        </div>
+
+                        <div id="dropZone" class="drop-zone mb-4">
+                            <div class="drop-zone-icon">📁</div>
+                            <h5>Drag & Drop Files Here</h5>
+                            <p class="text-muted">or click to browse from your computer</p>
+                            <input type="file" id="fileInput" hidden>
+                        </div>
+
+                        <div id="statusText" class="status-text d-none"></div>
+
+                        <div class="progress mb-3">
+                            <div id="progressBar" class="progress-bar" style="width:0%">0%</div>
+                        </div>
+
+                        <div class="upload-controls">
+                            <button class="btn btn-control btn-warning" onclick="pauseUpload()">⏸ Pause</button>
+                            <button class="btn btn-control btn-success" onclick="resumeUpload()">▶ Resume</button>
+                            <button class="btn btn-control btn-danger" onclick="cancelUpload()">❌ Cancel</button>
+                        </div>
+
+                        <div class="stats-card">
+                            <h5>Upload Statistics</h5>
+                            <div class="speed-display" id="uploadSpeed">0.00 MB/s</div>
+                            <div class="chart-container">
+                                <canvas id="speedChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script>
+        /* ================== CONFIG ================== */
+        // const SERVERS = [
+        //     "http://103.150.48.70:53526/zabftp",
+        //     "http://103.150.48.70:53525/zabftp"
+        // ];
+
+        const SERVERS = [
+            //"http://localhost:8080"
+            "http://103.150.48.70:53526/zabftp",
+            "http://103.150.48.70:53525/zabftp"
+        ];
+
+        const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB
+        const MAX_PARALLEL = 6;
+        const MAX_CHART_POINTS = 50; // Limit chart data points
+
+        /* ================== STATE ================== */
+        let currentUpload = {
+            file: null,
+            uploadId: null,
+            offset: 0,
+            paused: false,
+            cancelled: false
+        };
+
+        let speedChart;
+        let speedData = [];
+        let labels = [];
+        let authToken = null;
+
+        /* ================== INIT ================== */
+        document.addEventListener("DOMContentLoaded", () => {
+            initTabs();
+            initChart();
+            loadFiles();
+            restoreState();
+        });
+
+        /* ================== AUTHENTICATION ================== */
+        function showLoginModal() {
+            document.getElementById('loginModal').classList.add('active');
+            document.getElementById('username').focus();
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.remove('active');
+            document.getElementById('loginForm').reset();
+            document.getElementById('loginError').classList.add('d-none');
+        }
+
+        document.getElementById('loginForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+
+            try {
+                // Create Basic Auth token
+                const token = btoa(username + ':' + password);
+                authToken = 'Basic ' + token;
+
+                // Test authentication with a simple request
+                const response = await fetch('upload/start?fileName=test&totalSize=1', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': authToken
+                    }
+                });
+
+                if (response.ok || response.status === 400) { // 400 is ok, means auth passed but params invalid
+                    sessionStorage.setItem('authToken', authToken);
+                    errorDiv.classList.add('d-none');
+                    closeLoginModal();
+                    showStatus("✅ Login successful! You can now upload files.", "success");
+                } else if (response.status === 401 || response.status === 403) {
+                    throw new Error('Invalid credentials');
+                } else {
+                    throw new Error('Authentication failed');
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Invalid username or password';
+                errorDiv.classList.remove('d-none');
+                authToken = null;
+            }
+        };
+
+        function checkAuthBeforeUpload() {
+            authToken = sessionStorage.getItem('authToken');
+            if (!authToken) {
+                showLoginModal();
+                return false;
+            }
+            return true;
+        }
+
+        /* ================== TABS ================== */
+        function initTabs() {
+            document.querySelectorAll(".nav-link").forEach(link => {
+                link.onclick = () => {
+                    document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
+                    link.classList.add("active");
+
+                    document.querySelectorAll(".tab").forEach(t => t.classList.add("d-none"));
+                    document.getElementById(link.dataset.tab).classList.remove("d-none");
+                };
+            });
+        }
+
+        /* ================== FILE LIST ================== */
+        function loadFiles() {
+            fetch("allFiles")
+                .then(r => r.json())
+                .then(files => {
+                    const list = document.getElementById("fileList");
+                    if (files.length === 0) {
+                        list.innerHTML = `
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📭</div>
+                                <h5>No files uploaded yet</h5>
+                                <p>Upload your first file to get started</p>
+                            </div>`;
+                    } else {
+                        list.innerHTML = '';
+                        files.forEach(f => {
+                            list.innerHTML += `
+                                <div class="file-card">
+                                    <div class="file-info">
+                                        <div class="file-icon">📄</div>
+                                        <span>${f}</span>
+                                    </div>
+
+                                    <div class="d-flex gap-2">
+                                        <a class="btn btn-success"
+                                        href="download/${f}">
+                                        ⬇️ Normal
+                                        </a>
+
+                                        <button class="btn btn-primary"
+                                            onclick="fastDownload('${f}')">
+                                            ⚡ Fast
+                                        </button>
+                                    </div>
+                                </div>`;
+                        });
+
+                    }
+                })
+                .catch(err => {
+                    console.error("Failed to load files:", err);
+                    document.getElementById("fileList").innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">⚠️</div>
+                            <h5>Failed to load files</h5>
+                            <p>Please refresh the page</p>
+                        </div>`;
+                });
+        }
+
+
+        async function probeServer(server, filename) {
+            const start = performance.now();
+
+            try {
+                const res = await fetch(
+                    `${server}/download-range/${filename}`,
+                    { headers: { Range: "bytes=0-1048575" } }
+                );
+
+                const buf = await res.arrayBuffer();
+                const time = (performance.now() - start) / 1000;
+
+                return {
+                    server,
+                    speed: buf.byteLength / time, // bytes/sec
+                    healthy: true
+                };
+            } catch {
+                return { server, speed: 0, healthy: false };
+            }
+        }
+
+
+        async function getHealthyServers(filename) {
+            const results = await Promise.all(
+                SERVERS.map(s => probeServer(s, filename))
+            );
+
+            return results
+                .filter(s => s.healthy)
+                .sort((a, b) => b.speed - a.speed);
+        }
+
+
+        function loadResumeState(filename) {
+            return JSON.parse(
+                localStorage.getItem("resume_" + filename) || "{}"
+            );
+        }
+
+        function saveChunk(filename, index) {
+            const state = loadResumeState(filename);
+            state[index] = true;
+            localStorage.setItem("resume_" + filename, JSON.stringify(state));
+        }
+
+        function clearResume(filename) {
+            localStorage.removeItem("resume_" + filename);
+        }
+
+
+
+
+        async function fastDownload(filename) {
+            document.getElementById("progressBox").style.display = "block";
+
+            const servers = await getHealthyServers(filename);
+            if (!servers.length) {
+                alert("No healthy servers");
+                return;
+            }
+
+            // HEAD request (any server)
+            const head = await fetch(
+                `${servers[0].server}/download-range/${filename}`,
+                { method: "HEAD" }
+            );
+
+            const totalSize = parseInt(head.headers.get("Content-Length"));
+            const totalChunks = Math.ceil(totalSize / CHUNK_SIZE);
+
+            const resume = loadResumeState(filename);
+            const chunks = new Array(totalChunks);
+
+            let downloaded = 0;
+            let active = 0;
+            let chunkIndex = 0;
+            let bytesDownloaded = 0;
+            const startTime = Date.now();
+
+            async function worker() {
+                while (true) {
+                    let i;
+                    while (chunkIndex < totalChunks && resume[chunkIndex] === true) {
+                        chunkIndex++;
+                    }
+                    if (chunkIndex >= totalChunks) break;
+
+                    i = chunkIndex++;
+                    const server = servers[i % servers.length].server;
+
+                    const start = i * CHUNK_SIZE;
+                    const end = Math.min(start + CHUNK_SIZE - 1, totalSize - 1);
+
+                    active++;
+
+                    const res = await fetch(
+                        `${server}/download-range/${filename}`,
+                        { headers: { Range: `bytes=${start}-${end}` } }
+                    );
+
+                    const buf = await res.arrayBuffer();
+                    chunks[i] = buf;
+                    saveChunk(filename, i);
+
+                    bytesDownloaded += buf.byteLength;
+                    downloaded++;
+                    active--;
+
+                    updateUI(bytesDownloaded, totalSize, startTime);
+                }
+            }
+
+            await Promise.all(
+                Array.from({ length: MAX_PARALLEL }, worker)
+            );
+
+            clearResume(filename);
+
+            const blob = new Blob(chunks);
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            a.click();
+        }
+
+        function updateUI(bytes, total, startTime) {
+            const percent = (bytes / total) * 100;
+            document.getElementById("progressBar2").style.width = percent + "%";
+
+            const seconds = (Date.now() - startTime) / 1000;
+            const speed = bytes / seconds;
+            const eta = (total - bytes) / speed;
+
+            document.getElementById("speed").textContent =
+                (speed / 1024 / 1024).toFixed(2) + " MB/s";
+
+            document.getElementById("eta").textContent =
+                "ETA: " + Math.round(eta) + "s";
+        }
+
+
+
+        /* ================== DRAG & DROP ================== */
+        const dropZone = document.getElementById("dropZone");
+        const fileInput = document.getElementById("fileInput");
+
+        dropZone.onclick = () => {
+            if (!checkAuthBeforeUpload()) return;
+            fileInput.click();
+        };
+
+        dropZone.ondragover = e => {
+            e.preventDefault();
+            dropZone.classList.add("dragover");
+        };
+
+        dropZone.ondragleave = () => dropZone.classList.remove("dragover");
+
+        dropZone.ondrop = e => {
+            e.preventDefault();
+            dropZone.classList.remove("dragover");
+            if (!checkAuthBeforeUpload()) return;
+            startOrResumeUpload(e.dataTransfer.files[0]);
+        };
+
+        fileInput.onchange = () => {
+            if (fileInput.files[0]) {
+                startOrResumeUpload(fileInput.files[0]);
+            }
+        };
+
+        /* ================== UPLOAD LOGIC ================== */
+        async function startOrResumeUpload(file) {
+            if (!checkAuthBeforeUpload()) return;
+
+            currentUpload.file = file;
+            currentUpload.paused = false;
+            currentUpload.cancelled = false;
+
+            // Reset chart data for new upload
+            speedData = [];
+            labels = [];
+            updateChart();
+
+            const saved = JSON.parse(sessionStorage.getItem("uploadState"));
+
+            try {
+                if (saved && saved.fileName === file.name && saved.fileSize === file.size) {
+                    currentUpload.uploadId = saved.uploadId;
+
+                    const res = await fetch(`upload/progress/${saved.uploadId}`, {
+                        headers: { 'Authorization': authToken }
+                    });
+
+                    if (res.ok) {
+                        const progress = await res.json();
+                        currentUpload.offset = progress.uploadedBytes || 0;
+                    } else {
+                        throw new Error("Failed to resume upload");
+                    }
+                } else {
+                    const res = await fetch(`upload/start?fileName=${encodeURIComponent(file.name)}&totalSize=${file.size}`, {
+                        method: "POST",
+                        headers: { 'Authorization': authToken }
+                    });
+
+                    if (!res.ok) {
+                        throw new Error("Failed to start upload");
+                    }
+
+                    currentUpload.uploadId = await res.text();
+                    currentUpload.offset = 0;
+                }
+
+                saveState();
+                showStatus("📤 Uploading...", "info");
+                uploadLoop();
+            } catch (error) {
+                console.error("Upload initialization failed:", error);
+                showStatus("❌ Failed to start upload: " + error.message, "danger");
+                if (error.message.includes("401") || error.message.includes("403")) {
+                    sessionStorage.removeItem('authToken');
+                    authToken = null;
+                    showLoginModal();
+                }
+            }
+        }
+
+        async function uploadLoop() {
+            try {
+                while (currentUpload.offset < currentUpload.file.size) {
+                    if (currentUpload.paused || currentUpload.cancelled) return;
+
+                    const chunk = currentUpload.file.slice(
+                        currentUpload.offset,
+                        currentUpload.offset + CHUNK_SIZE
+                    );
+
+                    const form = new FormData();
+                    form.append("uploadId", currentUpload.uploadId);
+                    form.append("chunk", chunk);
+
+                    const start = performance.now();
+                    const response = await fetch("upload/chunk", {
+                        method: "POST",
+                        body: form,
+                        headers: { 'Authorization': authToken }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error("Chunk upload failed");
+                    }
+
+                    const end = performance.now();
+
+                    const speed = (chunk.size / ((end - start) / 1000)) / (1024 * 1024);
+                    document.getElementById("uploadSpeed").innerText = speed.toFixed(2) + ' MB/s';
+
+                    // Limit chart data to prevent memory issues
+                    speedData.push(parseFloat(speed.toFixed(2)));
+                    labels.push(labels.length + 1);
+
+                    if (speedData.length > MAX_CHART_POINTS) {
+                        speedData.shift();
+                        labels.shift();
+                        // Renumber labels
+                        labels = labels.map((_, i) => i + 1);
+                    }
+
+                    updateChart();
+
+                    currentUpload.offset += chunk.size;
+                    saveState();
+                    updateProgress(currentUpload.offset, currentUpload.file.size);
+                }
+
+                await fetch(`upload/finish?uploadId=${currentUpload.uploadId}&fileName=${encodeURIComponent(currentUpload.file.name)}`, {
+                    method: "POST",
+                    headers: { 'Authorization': authToken }
+                });
+
+                sessionStorage.removeItem("uploadState");
+                showStatus("✅ Upload completed successfully!", "success");
+                loadFiles();
+
+                // Reset upload state
+                currentUpload.file = null;
+                currentUpload.uploadId = null;
+                currentUpload.offset = 0;
+            } catch (error) {
+                console.error("Upload failed:", error);
+                showStatus("❌ Upload failed: " + error.message, "danger");
+            }
+        }
+
+        function pauseUpload() {
+            currentUpload.paused = true;
+            showStatus("⏸ Upload paused", "warning");
+        }
+
+        function resumeUpload() {
+            if (!currentUpload.file) {
+                showStatus("⚠️ No upload to resume", "warning");
+                return;
+            }
+            if (!checkAuthBeforeUpload()) return;
+
+            currentUpload.paused = false;
+            showStatus("▶ Upload resumed", "info");
+            uploadLoop();
+        }
+
+        function cancelUpload() {
+            if (currentUpload.uploadId && authToken) {
+                fetch(`upload/cancel?uploadId=${currentUpload.uploadId}`, {
+                    method: "POST",
+                    headers: { 'Authorization': authToken }
+                }).catch(err => console.error("Cancel request failed:", err));
+            }
+            currentUpload.cancelled = true;
+            currentUpload.file = null;
+            currentUpload.uploadId = null;
+            currentUpload.offset = 0;
+            sessionStorage.removeItem("uploadState");
+            updateProgress(0, 1);
+            showStatus("❌ Upload cancelled", "danger");
+
+            // Reset chart
+            speedData = [];
+            labels = [];
+            updateChart();
+        }
+
+        /* ================== STATE ================== */
+        function saveState() {
+            if (currentUpload.file) {
+                sessionStorage.setItem("uploadState", JSON.stringify({
+                    uploadId: currentUpload.uploadId,
+                    fileName: currentUpload.file.name,
+                    fileSize: currentUpload.file.size,
+                    uploadedBytes: currentUpload.offset
+                }));
+            }
+        }
+
+        function restoreState() {
+            if (sessionStorage.getItem("uploadState")) {
+                showStatus("📂 Previous upload detected. Select the same file to resume.", "info");
+            }
+        }
+
+        /* ================== UI ================== */
+        function updateProgress(loaded, total) {
+            const percent = Math.round((loaded / total) * 100);
+            const bar = document.getElementById("progressBar");
+            bar.style.width = percent + "%";
+            bar.innerText = percent + "%";
+        }
+
+        function showStatus(message, type) {
+            const statusText = document.getElementById("statusText");
+            statusText.textContent = message;
+            statusText.className = 'status-text';
+
+            // Color coding based on type
+            if (type === 'success') {
+                statusText.style.background = '#d4edda';
+                statusText.style.color = '#155724';
+            } else if (type === 'danger') {
+                statusText.style.background = '#f8d7da';
+                statusText.style.color = '#721c24';
+            } else if (type === 'warning') {
+                statusText.style.background = '#fff3cd';
+                statusText.style.color = '#856404';
+            } else {
+                statusText.style.background = '#e3f2fd';
+                statusText.style.color = '#1976d2';
+            }
+
+            statusText.classList.remove('d-none');
+        }
+
+        function initChart() {
+            const ctx = document.getElementById("speedChart");
+            speedChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: "Speed (MB/s)",
+                        data: speedData,
+                        borderColor: "#667eea",
+                        backgroundColor: "rgba(102, 126, 234, 0.1)",
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 0 // Disable animation for better performance
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: false
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function (value) {
+                                    return value.toFixed(1);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChart() {
+            if (speedChart) {
+                speedChart.data.labels = labels;
+                speedChart.data.datasets[0].data = speedData;
+                speedChart.update('none'); // Update without animation
+            }
+        }
+    </script>
+
+</body>
+</html>
