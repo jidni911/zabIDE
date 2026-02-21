@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Log Viewer - ZAB IDE</title>
+    <base href="/zabide/">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="mdbpro/mdbpro.css" rel="stylesheet">
+    <script src="mdbpro/mdbpro.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #1e1e1e;
+            --bg-secondary: #252526;
+            --bg-tertiary: #2d2d30;
+            --bg-hover: #2a2d2e;
+            --bg-active: #37373d;
+            --border-color: #3e3e42;
+            --text-primary: #cccccc;
+            --text-secondary: #858585;
+            --accent: #007acc;
+            --accent-hover: #0098ff;
+            --success: #4ec9b0;
+            --warning: #ce9178;
+            --error: #f48771;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Header */
+        .app-header {
+            background: var(--bg-secondary);
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 40px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 13px;
+        }
+
+        .header-title {
+            color: var(--text-primary);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 12px;
+        }
+
+        .user-badge {
+            color: var(--text-secondary);
+        }
+
+        .btn-back {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 5px 12px;
+            border-radius: 3px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-back:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Main Container */
+        .log-container {
+            display: flex;
+            height: calc(100vh - 40px);
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-header h2 {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .icon-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 3px;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .icon-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .search-box {
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 6px 10px 6px 30px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 18px;
+            top: 16px;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .file-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        .file-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .file-list::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        .file-list::-webkit-scrollbar-thumb {
+            background: #424242;
+            border-radius: 4px;
+        }
+
+        .file-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background 0.15s;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .file-item.active {
+            background: var(--bg-active);
+            border-left: 3px solid var(--accent);
+        }
+
+        .file-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-item-name {
+            color: var(--text-primary);
+            font-size: 13px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .file-item-meta {
+            display: flex;
+            gap: 10px;
+            margin-top: 4px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .file-size {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .file-date {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .file-actions {
+            display: none;
+            gap: 4px;
+        }
+
+        .file-item:hover .file-actions {
+            display: flex;
+        }
+
+        .file-action-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 3px;
+            transition: all 0.2s;
+            font-size: 12px;
+        }
+
+        .file-action-btn:hover {
+            background: var(--bg-active);
+            color: var(--text-primary);
+        }
+
+        .file-action-btn.danger:hover {
+            color: var(--error);
+        }
+
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        /* Log Viewer */
+        .log-viewer {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .log-toolbar {
+            background: var(--bg-secondary);
+            padding: 8px 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toolbar-left {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .toolbar-right {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .btn-toolbar {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-toolbar:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent);
+        }
+
+        .btn-toolbar:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .log-info {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .switch-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-tertiary);
+            transition: .3s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--accent);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
+
+        .log-content {
+            flex: 1;
+            overflow: auto;
+            background: var(--bg-primary);
+            padding: 15px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .log-content::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        .log-content::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        .log-content::-webkit-scrollbar-thumb {
+            background: #424242;
+            border-radius: 5px;
+        }
+
+        .log-line {
+            white-space: pre-wrap;
+            word-break: break-word;
+            padding: 2px 0;
+        }
+
+        .log-line:hover {
+            background: var(--bg-hover);
+        }
+
+        /* Log Level Colors */
+        .log-line.error {
+            color: var(--error);
+        }
+
+        .log-line.warning {
+            color: var(--warning);
+        }
+
+        .log-line.info {
+            color: var(--success);
+        }
+
+        .log-line.debug {
+            color: var(--text-secondary);
+        }
+
+        .empty-viewer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+        }
+
+        .empty-viewer i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .status-bar {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            padding: 4px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: var(--text-secondary);
+            height: 24px;
+        }
+
+        /* Modal Overrides */
+        .modal-content {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .modal-header {
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-title {
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .modal-body {
+            color: var(--text-primary);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+        }
+
+        .btn-danger {
+            background: var(--error);
+            border: none;
+        }
+
+        .btn-close {
+            filter: invert(1);
+        }
+
+        .alert {
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <div class="app-header">
+        <div class="header-left">
+            <span class="header-title">
+                <i class="fas fa-file-alt"></i>
+                Log Viewer
+            </span>
+        </div>
+        <div class="header-right">
+            <span class="user-badge"><i class="fas fa-user"></i> <span id="currentUser"></span></span>
+            <a href="" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="log-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>Log Files</h2>
+                <div class="sidebar-actions">
+                    <button class="icon-btn danger" onclick="cleanAllLogs()" title="Clean All Logs">
+                        <i class="fas fa-broom"></i>
+                    </button>
+                    <button class="icon-btn" onclick="refreshLogs()" title="Refresh">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search files..." oninput="searchFiles(this.value)">
+            </div>
+
+            <div class="file-list" id="fileList">
+                <div class="empty-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading log files...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Log Viewer -->
+        <div class="log-viewer">
+            <div class="log-toolbar">
+                <div class="toolbar-left">
+                    <button class="btn-toolbar" id="downloadBtn" onclick="downloadLog()" disabled>
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                    <button class="btn-toolbar" id="refreshBtn" onclick="refreshCurrentLog()" disabled>
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                    <div class="switch-container">
+                        <label class="switch">
+                            <input type="checkbox" id="autoRefresh" onchange="toggleAutoRefresh()">
+                            <span class="slider"></span>
+                        </label>
+                        <span>Auto-refresh (5s)</span>
+                    </div>
+                </div>
+                <div class="toolbar-right">
+                    <span class="log-info" id="logInfo">No file selected</span>
+                </div>
+            </div>
+
+            <div class="log-content" id="logContent">
+                <div class="empty-viewer">
+                    <i class="fas fa-file-alt"></i>
+                    <p>Select a log file to view its contents</p>
+                </div>
+            </div>
+
+            <div class="status-bar">
+                <span id="statusMessage">Ready</span>
+                <span id="logStats"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ================== AUTH CHECK ================== */
+        let authToken = sessionStorage.getItem('authToken');
+        let currentUsername = sessionStorage.getItem('username');
+
+        if (!authToken || !currentUsername) {
+            window.location.href = '';
+        }
+
+        document.getElementById('currentUser').textContent = currentUsername;
+
+        /* ================== STATE ================== */
+        let logFiles = [];
+        let currentLogFile = null;
+        let autoRefreshInterval = null;
+        let allFiles = []; // For search
+
+        /* ================== INIT ================== */
+        document.addEventListener("DOMContentLoaded", () => {
+            loadLogFiles();
+        });
+
+        /* ================== LOAD LOG FILES ================== */
+        async function loadLogFiles() {
+            try {
+                updateStatus('Loading log files...');
+
+                const response = await fetch('api/logs/list', {
+                    headers: { 'Authorization': authToken }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    logFiles = data.files;
+                    allFiles = [...logFiles];
+                    renderFileList();
+                    updateStatus(`Loaded ${logFiles.length} log files`);
+                } else {
+                    showError('Failed to load log files: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Failed to load log files:', error);
+                showError('Failed to load log files');
+            }
+        }
+
+        function renderFileList() {
+            const container = document.getElementById('fileList');
+
+            if (logFiles.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-folder-open"></i>
+                        <p>No log files found</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+
+            logFiles.forEach(file => {
+                const item = document.createElement('div');
+                item.className = 'file-item' + (currentLogFile === file.name ? ' active' : '');
+                item.dataset.filename = file.name;
+
+                item.innerHTML = `
+                    <div class="file-item-info">
+                        <div class="file-item-name">
+                            <i class="fas fa-file-alt"></i>
+                            <span title="${file.name}">${file.name}</span>
+                        </div>
+                        <div class="file-item-meta">
+                            <span class="file-size">
+                                <i class="fas fa-weight"></i>
+                                ${formatFileSize(file.size)}
+                            </span>
+                            <span class="file-date">
+                                <i class="fas fa-clock"></i>
+                                ${formatDate(file.lastModified)}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="file-action-btn danger" onclick="deleteLogFile('${file.name}', event)" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+
+                item.onclick = (e) => {
+                    if (!e.target.closest('.file-actions')) {
+                        viewLogFile(file.name);
+                    }
+                };
+
+                container.appendChild(item);
+            });
+        }
+
+        /* ================== VIEW LOG FILE ================== */
+        async function viewLogFile(filename) {
+            try {
+                currentLogFile = filename;
+                updateStatus('Loading log file...');
+
+                document.getElementById('downloadBtn').disabled = false;
+                document.getElementById('refreshBtn').disabled = false;
+                document.getElementById('logInfo').textContent = filename;
+
+                // Update active state
+                document.querySelectorAll('.file-item').forEach(item => {
+                    if (item.dataset.filename === filename) {
+                        item.classList.add('active');
+                    } else {
+                        item.classList.remove('active');
+                    }
+                });
+
+                const response = await fetch(`api/logs/read?filename=${encodeURIComponent(filename)}`, {
+                    headers: { 'Authorization': authToken }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayLogContent(data.content);
+                    updateStatus(`Loaded ${filename}`);
+                } else {
+                    showError('Failed to read log file: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Failed to view log file:', error);
+                showError('Failed to view log file');
+            }
+        }
+
+        function displayLogContent(content) {
+            const container = document.getElementById('logContent');
+            container.innerHTML = '';
+
+            if (!content || content.trim() === '') {
+                container.innerHTML = `
+                    <div class="empty-viewer">
+                        <i class="fas fa-file"></i>
+                        <p>Log file is empty</p>
+                    </div>`;
+                return;
+            }
+
+            const lines = content.split('\n');
+
+            lines.forEach((line, index) => {
+                const lineDiv = document.createElement('div');
+                lineDiv.className = 'log-line ' + detectLogLevel(line);
+                lineDiv.textContent = line;
+                container.appendChild(lineDiv);
+            });
+
+            // Update stats
+            document.getElementById('logStats').textContent = `${lines.length} lines`;
+
+            // Auto-scroll to bottom
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function detectLogLevel(line) {
+            const lowerLine = line.toLowerCase();
+            if (lowerLine.includes('error') || lowerLine.includes('exception') || lowerLine.includes('fatal')) {
+                return 'error';
+            } else if (lowerLine.includes('warn') || lowerLine.includes('warning')) {
+                return 'warning';
+            } else if (lowerLine.includes('info')) {
+                return 'info';
+            } else if (lowerLine.includes('debug')) {
+                return 'debug';
+            }
+            return '';
+        }
+
+        /* ================== DELETE LOG FILE ================== */
+        async function deleteLogFile(filename, event) {
+            event.stopPropagation();
+
+            if (!confirm(`Are you sure you want to delete "${filename}"?`)) {
+                return;
+            }
+
+            try {
+                updateStatus('Deleting log file...');
+
+                const response = await fetch(`api/logs/delete?filename=${encodeURIComponent(filename)}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': authToken }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    updateStatus(`Deleted ${filename}`, 'success');
+
+                    // If deleted file is currently open, clear viewer
+                    if (currentLogFile === filename) {
+                        currentLogFile = null;
+                        document.getElementById('logContent').innerHTML = `
+                            <div class="empty-viewer">
+                                <i class="fas fa-file-alt"></i>
+                                <p>Select a log file to view its contents</p>
+                            </div>`;
+                        document.getElementById('downloadBtn').disabled = true;
+                        document.getElementById('refreshBtn').disabled = true;
+                        document.getElementById('logInfo').textContent = 'No file selected';
+                    }
+
+                    // Reload file list
+                    await loadLogFiles();
+                } else {
+                    showError('Failed to delete log file: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Failed to delete log file:', error);
+                showError('Failed to delete log file');
+            }
+        }
+
+        async function cleanAllLogs() {
+            if (!confirm(`Are you sure you want to delete all logs?`)) {
+                return;
+            }
+            const filenames = logFiles.filter(file => new Date(file.lastModified).setHours(0, 0, 0, 0) != new Date().setHours(0, 0, 0, 0)).map(file => file.name);
+            for (const filename of filenames) {
+                try {
+                    updateStatus('Deleting log file...');
+
+                    const response = await fetch(`api/logs/delete?filename=${encodeURIComponent(filename)}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': authToken }
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        updateStatus(`Deleted ${filename}`, 'success');
+
+                        // If deleted file is currently open, clear viewer
+                        if (currentLogFile === filename) {
+                            currentLogFile = null;
+                            document.getElementById('logContent').innerHTML = `
+                            <div class="empty-viewer">
+                                <i class="fas fa-file-alt"></i>
+                                <p>Select a log file to view its contents</p>
+                            </div>`;
+                            document.getElementById('downloadBtn').disabled = true;
+                            document.getElementById('refreshBtn').disabled = true;
+                            document.getElementById('logInfo').textContent = 'No file selected';
+                        }
+
+                        // Reload file list
+                        await loadLogFiles();
+                    } else {
+                        showError('Failed to delete log file: ' + data.message);
+                    }
+                } catch (error) {
+                    console.error('Failed to delete log file:', error);
+                    showError('Failed to delete log file');
+                }
+            }
+        }
+
+        /* ================== DOWNLOAD LOG ================== */
+        function downloadLog() {
+            if (!currentLogFile) return;
+
+            window.location.href = `api/logs/download?filename=${encodeURIComponent(currentLogFile)}&_auth=${encodeURIComponent(authToken)}`;
+            updateStatus('Download started', 'success');
+        }
+
+        /* ================== REFRESH ================== */
+        function refreshLogs() {
+            loadLogFiles();
+        }
+
+        function refreshCurrentLog() {
+            if (currentLogFile) {
+                viewLogFile(currentLogFile);
+            }
+        }
+
+        function toggleAutoRefresh() {
+            const enabled = document.getElementById('autoRefresh').checked;
+
+            if (enabled) {
+                autoRefreshInterval = setInterval(() => {
+                    if (currentLogFile) {
+                        refreshCurrentLog();
+                    }
+                }, 5000);
+                updateStatus('Auto-refresh enabled');
+            } else {
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = null;
+                }
+                updateStatus('Auto-refresh disabled');
+            }
+        }
+
+        /* ================== SEARCH ================== */
+        function searchFiles(query) {
+            const lowerQuery = query.toLowerCase().trim();
+
+            if (!lowerQuery) {
+                logFiles = [...allFiles];
+                renderFileList();
+                return;
+            }
+
+            logFiles = allFiles.filter(file =>
+                file.name.toLowerCase().includes(lowerQuery)
+            );
+
+            renderFileList();
+        }
+
+        /* ================== HELPERS ================== */
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function formatDate(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+
+            if (diff < 60000) {
+                return 'Just now';
+            } else if (diff < 3600000) {
+                const mins = Math.floor(diff / 60000);
+                return `${mins}m ago`;
+            } else if (diff < 86400000) {
+                const hours = Math.floor(diff / 3600000);
+                return `${hours}h ago`;
+            } else if (diff < 604800000) {
+                const days = Math.floor(diff / 86400000);
+                return `${days}d ago`;
+            } else {
+                return date.toLocaleDateString();
+            }
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.textContent = message;
+
+            if (type === 'success') {
+                statusEl.style.color = 'var(--success)';
+            } else if (type === 'error') {
+                statusEl.style.color = 'var(--error)';
+            } else {
+                statusEl.style.color = 'var(--text-secondary)';
+            }
+
+            if (type !== 'info') {
+                setTimeout(() => {
+                    statusEl.textContent = 'Ready';
+                    statusEl.style.color = 'var(--text-secondary)';
+                }, 3000);
+            }
+        }
+
+        function showError(message) {
+            updateStatus(message, 'error');
+            alert(message);
+        }
+    </script>
+
+</body>
+</html>

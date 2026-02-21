@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ZAB Backup - ZAB IDE</title>
+    <base href="/zabide/">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="mdbpro/mdbpro.css" rel="stylesheet">
+    <script src="mdbpro/mdbpro.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #1e1e1e;
+            --bg-secondary: #252526;
+            --bg-tertiary: #2d2d30;
+            --bg-hover: #2a2d2e;
+            --bg-active: #37373d;
+            --border-color: #3e3e42;
+            --text-primary: #cccccc;
+            --text-secondary: #858585;
+            --accent: #007acc;
+            --accent-hover: #0098ff;
+            --success: #4ec9b0;
+            --warning: #ce9178;
+            --error: #f48771;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Header */
+        .app-header {
+            background: var(--bg-secondary);
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 40px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 13px;
+        }
+
+        .header-title {
+            color: var(--text-primary);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 12px;
+        }
+
+        .user-badge {
+            color: var(--text-secondary);
+        }
+
+        .btn-back {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 5px 12px;
+            border-radius: 3px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-back:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Main Container */
+        .backup-container {
+            display: flex;
+            height: calc(100vh - 40px);
+            overflow: hidden;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: auto;
+            padding: 30px;
+        }
+
+        .main-content::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .main-content::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        .main-content::-webkit-scrollbar-thumb {
+            background: #424242;
+            border-radius: 5px;
+        }
+
+        .section {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .section-description {
+            color: var(--text-secondary);
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .backup-actions {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-backup {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-backup:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 122, 204, 0.4);
+        }
+
+        .btn-backup:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-backup.success {
+            background: var(--success);
+        }
+
+        .btn-backup.warning {
+            background: var(--warning);
+        }
+
+        /* Backup History */
+        .backup-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .backup-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .backup-item:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent);
+        }
+
+        .backup-item-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .backup-item-name {
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .backup-item-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .backup-item-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-small:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent);
+        }
+
+        .btn-small.danger {
+            border-color: var(--error);
+            color: var(--error);
+        }
+
+        .btn-small.danger:hover {
+            background: var(--error);
+            color: white;
+        }
+
+        /* Progress Section */
+        .progress-section {
+            display: none;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .progress-section.active {
+            display: block;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .progress-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .progress-status {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 30px;
+            background: var(--bg-primary);
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+            transition: width 0.3s ease;
+        }
+
+        .progress-log {
+            background: var(--bg-primary);
+            border-radius: 4px;
+            padding: 12px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-family: 'Consolas', monospace;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .progress-log::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .progress-log::-webkit-scrollbar-thumb {
+            background: #424242;
+            border-radius: 3px;
+        }
+
+        .log-line {
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .log-line.success {
+            color: var(--success);
+        }
+
+        .log-line.error {
+            color: var(--error);
+        }
+
+        .log-line.warning {
+            color: var(--warning);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        /* Alert Box */
+        .alert-box {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--warning);
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: start;
+            gap: 12px;
+        }
+
+        .alert-box i {
+            color: var(--warning);
+            font-size: 20px;
+            margin-top: 2px;
+        }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .alert-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <div class="app-header">
+        <div class="header-left">
+            <span class="header-title">
+                <i class="fas fa-box"></i>
+                ZAB Backup
+            </span>
+        </div>
+        <div class="header-right">
+            <span class="user-badge"><i class="fas fa-user"></i> <span id="currentUser"></span></span>
+            <a href="" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="backup-container">
+        <div class="main-content">
+
+            <!-- Alert Box -->
+            <div class="alert-box">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div class="alert-content">
+                    <div class="alert-title">Important Information</div>
+                    <div class="alert-text">
+                        Backup operations may take several minutes depending on the size of your data. 
+                        Database backups are automatically compressed and only the latest 3 backups are retained.
+                        Please ensure you have sufficient disk space before starting a backup.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Webapp Backup Section -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <div class="section-icon">
+                            <i class="fas fa-folder"></i>
+                        </div>
+                        <div>
+                            <div>Web Application Backup</div>
+                            <div style="font-size: 12px; font-weight: 400; color: var(--text-secondary); margin-top: 4px;">
+                                Backup entire webapp folder (/webapps/zab)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-description">
+                    Creates a compressed archive of your entire web application folder including all files, 
+                    configurations, and resources. The backup will be saved as a ZIP file.
+                </div>
+
+                <div class="backup-actions">
+                    <button class="btn-backup" id="backupWebappBtn" onclick="backupWebapp()">
+                        <i class="fas fa-download"></i>
+                        Create Webapp Backup
+                    </button>
+                </div>
+
+                <!-- Progress for Webapp -->
+                <div class="progress-section" id="webappProgress">
+                    <div class="progress-header">
+                        <span class="progress-title">Backup in Progress...</span>
+                        <span class="progress-status" id="webappStatus">Initializing...</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="webappProgressBar" style="width: 0%">0%</div>
+                    </div>
+                    <div class="progress-log" id="webappLog"></div>
+                </div>
+            </div>
+
+            <!-- Database Backup Section -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <div class="section-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div>
+                            <div>Database Backup</div>
+                            <div style="font-size: 12px; font-weight: 400; color: var(--text-secondary); margin-top: 4px;">
+                                Backup SQL Server database with compression
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-description">
+                    Creates a full database backup using SQL Server's native backup functionality with compression.
+                    The backup file is automatically compressed and saved. Only the latest 3 database backups are kept.
+                </div>
+
+                <div class="backup-actions">
+                    <button class="btn-backup" id="backupDatabaseBtn" onclick="backupDatabase()">
+                        <i class="fas fa-database"></i>
+                        Create Database Backup
+                    </button>
+                </div>
+
+                <!-- Progress for Database -->
+                <div class="progress-section" id="databaseProgress">
+                    <div class="progress-header">
+                        <span class="progress-title">Database Backup in Progress...</span>
+                        <span class="progress-status" id="databaseStatus">Reading configuration...</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="databaseProgressBar" style="width: 0%">0%</div>
+                    </div>
+                    <div class="progress-log" id="databaseLog"></div>
+                </div>
+            </div>
+
+            <!-- Backup History -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <div class="section-icon">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <div>Recent Backups</div>
+                    </div>
+                    <button class="btn-small" onclick="refreshBackupHistory()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+
+                <div class="backup-list" id="backupHistory">
+                    <div class="empty-state">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading backup history...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">
+                        <div class="section-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div>Backup Statistics</div>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Backups</div>
+                        <div class="stat-value" id="totalBackups">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Database Backups</div>
+                        <div class="stat-value" id="dbBackups">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Webapp Backups</div>
+                        <div class="stat-value" id="webappBackups">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Size</div>
+                        <div class="stat-value" id="totalSize">0 MB</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        /* ================== AUTH CHECK ================== */
+        let authToken = sessionStorage.getItem('authToken');
+        let currentUsername = sessionStorage.getItem('username');
+
+        if (!authToken || !currentUsername) {
+            window.location.href = '';
+        }
+
+        document.getElementById('currentUser').textContent = currentUsername;
+
+        /* ================== INIT ================== */
+        document.addEventListener("DOMContentLoaded", () => {
+            refreshBackupHistory();
+        });
+
+        /* ================== WEBAPP BACKUP ================== */
+        async function backupWebapp() {
+            const btn = document.getElementById('backupWebappBtn');
+            const progress = document.getElementById('webappProgress');
+            const progressBar = document.getElementById('webappProgressBar');
+            const status = document.getElementById('webappStatus');
+            const log = document.getElementById('webappLog');
+
+            btn.disabled = true;
+            progress.classList.add('active');
+            log.innerHTML = '';
+
+            try {
+                addLog(log, 'Starting webapp backup...', 'info');
+                updateProgress(progressBar, status, 10, 'Initializing...');
+
+                const response = await fetch('api/backup/webapp', {
+                    method: 'POST',
+                    headers: { 'Authorization': authToken }
+                });
+
+                updateProgress(progressBar, status, 50, 'Compressing files...');
+                addLog(log, 'Creating ZIP archive...', 'info');
+
+                const data = await response.json();
+
+                if (data.success) {
+                    updateProgress(progressBar, status, 100, 'Complete!');
+                    addLog(log, `Backup created: ${data.filename}`, 'success');
+                    addLog(log, `Size: ${formatFileSize(data.size)}`, 'success');
+
+                    // Download
+                    setTimeout(() => {
+                        window.location.href = `api/backup/download?filename=${encodeURIComponent(data.filename)}&_auth=${encodeURIComponent(authToken)}`;
+                        addLog(log, 'Download started', 'success');
+                    }, 500);
+
+                    setTimeout(() => {
+                        progress.classList.remove('active');
+                        btn.disabled = false;
+                        refreshBackupHistory();
+                    }, 2000);
+                } else {
+                    addLog(log, `Error: ${data.message}`, 'error');
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                addLog(log, `Failed: ${error.message}`, 'error');
+                btn.disabled = false;
+            }
+        }
+
+        /* ================== DATABASE BACKUP ================== */
+        async function backupDatabase() {
+            const btn = document.getElementById('backupDatabaseBtn');
+            const progress = document.getElementById('databaseProgress');
+            const progressBar = document.getElementById('databaseProgressBar');
+            const status = document.getElementById('databaseStatus');
+            const log = document.getElementById('databaseLog');
+
+            btn.disabled = true;
+            progress.classList.add('active');
+            log.innerHTML = '';
+
+            try {
+                addLog(log, 'Starting database backup...', 'info');
+                updateProgress(progressBar, status, 10, 'Reading configuration...');
+
+                const response = await fetch('api/backup/database', {
+                    method: 'POST',
+                    headers: { 'Authorization': authToken }
+                });
+
+                // Poll for progress
+                const pollInterval = setInterval(async () => {
+                    try {
+                        const progressResponse = await fetch('api/backup/database/progress', {
+                            headers: { 'Authorization': authToken }
+                        });
+                        const progressData = await progressResponse.json();
+
+                        if (progressData.progress !== undefined) {
+                            updateProgress(progressBar, status, progressData.progress, progressData.message || 'Processing...');
+                            
+                            if (progressData.log) {
+                                progressData.log.forEach(line => {
+                                    if (!log.textContent.includes(line)) {
+                                        addLog(log, line, 'info');
+                                    }
+                                });
+                            }
+
+                            if (progressData.progress >= 100) {
+                                clearInterval(pollInterval);
+                            }
+                        }
+                    } catch (e) {
+                        // Ignore polling errors
+                    }
+                }, 1000);
+
+                const data = await response.json();
+                clearInterval(pollInterval);
+
+                if (data.success) {
+                    updateProgress(progressBar, status, 100, 'Complete!');
+                    addLog(log, `Database backup created: ${data.filename}`, 'success');
+                    addLog(log, `Size: ${formatFileSize(data.size)}`, 'success');
+                    addLog(log, 'Old backups cleaned up', 'success');
+
+                    // Download
+                    setTimeout(() => {
+                        window.location.href = `api/backup/download?filename=${encodeURIComponent(data.filename)}&_auth=${encodeURIComponent(authToken)}`;
+                        addLog(log, 'Download started', 'success');
+                    }, 500);
+
+                    setTimeout(() => {
+                        progress.classList.remove('active');
+                        btn.disabled = false;
+                        refreshBackupHistory();
+                    }, 2000);
+                } else {
+                    addLog(log, `Error: ${data.message}`, 'error');
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                addLog(log, `Failed: ${error.message}`, 'error');
+                btn.disabled = false;
+            }
+        }
+
+        /* ================== BACKUP HISTORY ================== */
+        async function refreshBackupHistory() {
+            try {
+                const response = await fetch('api/backup/list', {
+                    headers: { 'Authorization': authToken }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    renderBackupHistory(data.backups);
+                    updateStatistics(data.backups);
+                }
+            } catch (error) {
+                console.error('Failed to load backup history:', error);
+            }
+        }
+
+        function renderBackupHistory(backups) {
+            const container = document.getElementById('backupHistory');
+
+            if (backups.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-box-open"></i>
+                        <p>No backups found</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+
+            backups.forEach(backup => {
+                const item = document.createElement('div');
+                item.className = 'backup-item';
+
+                const type = backup.type === 'database' ? 'Database' : 'Webapp';
+                const icon = backup.type === 'database' ? 'fa-database' : 'fa-folder';
+
+                item.innerHTML = `
+                    <div class="backup-item-info">
+                        <div class="backup-item-name">
+                            <i class="fas ${icon}"></i> ${backup.filename}
+                        </div>
+                        <div class="backup-item-meta">
+                            <span><i class="fas fa-tag"></i> ${type}</span>
+                            <span><i class="fas fa-weight"></i> ${formatFileSize(backup.size)}</span>
+                            <span><i class="fas fa-clock"></i> ${formatDate(backup.created)}</span>
+                        </div>
+                    </div>
+                    <div class="backup-item-actions">
+                        <button class="btn-small" onclick="downloadBackup('${backup.filename}')">
+                            <i class="fas fa-download"></i> Download
+                        </button>
+                        <button class="btn-small danger" onclick="deleteBackup('${backup.filename}')">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                `;
+
+                container.appendChild(item);
+            });
+        }
+
+        function updateStatistics(backups) {
+            const dbBackups = backups.filter(b => b.type === 'database').length;
+            const webappBackups = backups.filter(b => b.type === 'webapp').length;
+            const totalSize = backups.reduce((sum, b) => sum + b.size, 0);
+
+            document.getElementById('totalBackups').textContent = backups.length;
+            document.getElementById('dbBackups').textContent = dbBackups;
+            document.getElementById('webappBackups').textContent = webappBackups;
+            document.getElementById('totalSize').textContent = formatFileSize(totalSize);
+        }
+
+        function downloadBackup(filename) {
+            window.location.href = `api/backup/download?filename=${encodeURIComponent(filename)}&_auth=${encodeURIComponent(authToken)}`;
+        }
+
+        async function deleteBackup(filename) {
+            if (!confirm(`Delete backup: ${filename}?`)) return;
+
+            try {
+                const response = await fetch(`api/backup/delete?filename=${encodeURIComponent(filename)}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': authToken }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    refreshBackupHistory();
+                } else {
+                    alert('Failed to delete backup: ' + data.message);
+                }
+            } catch (error) {
+                alert('Failed to delete backup: ' + error.message);
+            }
+        }
+
+        /* ================== HELPERS ================== */
+        function updateProgress(bar, status, percent, message) {
+            bar.style.width = percent + '%';
+            bar.textContent = Math.round(percent) + '%';
+            status.textContent = message;
+        }
+
+        function addLog(container, message, type = 'info') {
+            const line = document.createElement('div');
+            line.className = 'log-line ' + type;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            container.appendChild(line);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function formatDate(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleString();
+        }
+    </script>
+
+</body>
+</html>

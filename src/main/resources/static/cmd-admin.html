@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Terminal - ZAB IDE</title>
+    <base href="/zabide/">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="mdbpro/mdbpro.css" rel="stylesheet">
+    <script src="mdbpro/mdbpro.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Xterm.js for Terminal -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #1e1e1e;
+            --bg-secondary: #252526;
+            --bg-tertiary: #2d2d30;
+            --bg-hover: #2a2d2e;
+            --bg-active: #37373d;
+            --border-color: #3e3e42;
+            --text-primary: #cccccc;
+            --text-secondary: #858585;
+            --accent: #007acc;
+            --accent-hover: #0098ff;
+            --success: #4ec9b0;
+            --warning: #ce9178;
+            --error: #f48771;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Header */
+        .app-header {
+            background: var(--bg-secondary);
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 40px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 13px;
+        }
+
+        .header-title {
+            color: var(--text-primary);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 12px;
+        }
+
+        .user-badge {
+            color: var(--text-secondary);
+        }
+
+        .btn-back {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 5px 12px;
+            border-radius: 3px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-back:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Terminal Container */
+        .terminal-container {
+            display: flex;
+            height: calc(100vh - 40px);
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sidebar-header h2 {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
+        }
+
+        .icon-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 3px;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .icon-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .terminal-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        .terminal-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .terminal-list::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        .terminal-list::-webkit-scrollbar-thumb {
+            background: #424242;
+            border-radius: 4px;
+        }
+
+        .terminal-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background 0.15s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .terminal-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .terminal-item.active {
+            background: var(--bg-active);
+            border-left: 3px solid var(--accent);
+        }
+
+        .terminal-item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            flex: 1;
+        }
+
+        .terminal-item-name {
+            color: var(--text-primary);
+        }
+
+        .terminal-item-path {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .terminal-item-close {
+            opacity: 0;
+            transition: opacity 0.2s;
+            color: var(--text-secondary);
+        }
+
+        .terminal-item:hover .terminal-item-close {
+            opacity: 1;
+        }
+
+        .terminal-item-close:hover {
+            color: var(--error);
+        }
+
+        /* Main Area */
+        .main-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .terminal-toolbar {
+            background: var(--bg-secondary);
+            padding: 8px 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toolbar-left {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-toolbar {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-toolbar:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent);
+        }
+
+        .btn-toolbar.danger {
+            border-color: var(--error);
+            color: var(--error);
+        }
+
+        .btn-toolbar.danger:hover {
+            background: var(--error);
+            color: white;
+        }
+
+        .current-directory {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .terminal-wrapper {
+            flex: 1;
+            padding: 10px;
+            background: #000000;
+            overflow: hidden;
+        }
+
+        #terminal {
+            height: 100%;
+            width: 100%;
+        }
+
+        /* Command History Panel */
+        .history-panel {
+            position: fixed;
+            right: -350px;
+            top: 40px;
+            width: 350px;
+            height: calc(100vh - 40px);
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border-color);
+            transition: right 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .history-panel.open {
+            right: 0;
+        }
+
+        .history-toggle {
+            position: fixed;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 60px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-right: none;
+            border-radius: 12px 0 0 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            z-index: 999;
+        }
+
+        .history-toggle:hover {
+            background: var(--bg-hover);
+            color: var(--accent);
+        }
+
+        .history-toggle.hidden {
+            display: none;
+        }
+
+        .history-header {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-header h3 {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-transform: uppercase;
+        }
+
+        .history-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        .history-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .history-content::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        .history-content::-webkit-scrollbar-thumb {
+            background: #424242;
+            border-radius: 4px;
+        }
+
+        .history-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background 0.15s;
+            border-bottom: 1px solid var(--border-color);
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+        }
+
+        .history-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .history-command {
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .history-meta {
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        .history-empty {
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .status-bar {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            padding: 4px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: var(--text-secondary);
+            height: 24px;
+        }
+
+        /* Modal Overrides */
+        .modal-content {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .modal-header {
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-title {
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .form-control {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        .form-control:focus {
+            background: var(--bg-primary);
+            border-color: var(--accent);
+            color: var(--text-primary);
+        }
+
+        .form-label {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-hover);
+        }
+
+        .btn-close {
+            filter: invert(1);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <div class="app-header">
+        <div class="header-left">
+            <span class="header-title">
+                <i class="fas fa-terminal"></i>
+                Terminal
+            </span>
+        </div>
+        <div class="header-right">
+            <span class="user-badge"><i class="fas fa-user"></i> <span id="currentUser"></span></span>
+            <a href="" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="terminal-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2>Terminals</h2>
+                <button class="icon-btn" onclick="createNewTerminal()" title="New Terminal">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <div class="terminal-list" id="terminalList">
+                <!-- Terminal items will be added here -->
+            </div>
+        </div>
+
+        <!-- Main Area -->
+        <div class="main-area">
+            <div class="terminal-toolbar">
+                <div class="toolbar-left">
+                    <button class="btn-toolbar" onclick="clearTerminal()">
+                        <i class="fas fa-eraser"></i> Clear
+                    </button>
+                    <button class="btn-toolbar danger" onclick="killTerminal()">
+                        <i class="fas fa-skull-crossbones"></i> Kill Process
+                    </button>
+                </div>
+                <div class="current-directory">
+                    <i class="fas fa-folder"></i>
+                    <span id="currentDir">~</span>
+                </div>
+            </div>
+
+            <div class="terminal-wrapper">
+                <div id="terminal"></div>
+            </div>
+
+            <div class="status-bar">
+                <span id="statusMessage">Ready</span>
+                <span id="terminalInfo">Terminal 1</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Command History Toggle -->
+    <div class="history-toggle" id="historyToggle" onclick="toggleHistoryPanel()">
+        <i class="fas fa-history"></i>
+    </div>
+
+    <!-- Command History Panel -->
+    <div class="history-panel" id="historyPanel">
+        <div class="history-header">
+            <h3><i class="fas fa-history"></i> Command History</h3>
+            <div style="display: flex; gap: 5px;">
+                <button class="icon-btn" onclick="clearHistory()" title="Clear History">
+                    <i class="fas fa-trash"></i>
+                </button>
+                <button class="icon-btn" onclick="toggleHistoryPanel()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        <div class="history-content" id="historyContent">
+            <div class="history-empty">
+                <i class="fas fa-history"></i>
+                <p>No command history yet</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ================== AUTH CHECK ================== */
+        let authToken = sessionStorage.getItem('authToken');
+        let currentUsername = sessionStorage.getItem('username');
+
+        if (!authToken || !currentUsername) {
+            window.location.href = '';
+        }
+
+        document.getElementById('currentUser').textContent = currentUsername;
+
+        /* ================== STATE ================== */
+        let terminals = [];
+        let activeTerminalId = null;
+        let term = null;
+        let fitAddon = null;
+        let commandHistory = [];
+        let currentCommand = '';
+        let currentLine = 0;
+
+        /* ================== INIT ================== */
+        document.addEventListener("DOMContentLoaded", () => {
+            initTerminal();
+            createNewTerminal();
+            loadCommandHistory();
+            
+            window.addEventListener('resize', () => {
+                if (fitAddon) fitAddon.fit();
+            });
+        });
+
+        /* ================== TERMINAL INITIALIZATION ================== */
+        function initTerminal() {
+            term = new Terminal({
+                cursorBlink: true,
+                fontSize: 14,
+                fontFamily: 'Consolas, Monaco, monospace',
+                theme: {
+                    background: '#000000',
+                    foreground: '#ffffff',
+                    cursor: '#ffffff',
+                    cursorAccent: '#000000',
+                    selection: 'rgba(255, 255, 255, 0.3)',
+                    black: '#000000',
+                    red: '#e06c75',
+                    green: '#98c379',
+                    yellow: '#d19a66',
+                    blue: '#61afef',
+                    magenta: '#c678dd',
+                    cyan: '#56b6c2',
+                    white: '#abb2bf',
+                    brightBlack: '#5c6370',
+                    brightRed: '#e06c75',
+                    brightGreen: '#98c379',
+                    brightYellow: '#d19a66',
+                    brightBlue: '#61afef',
+                    brightMagenta: '#c678dd',
+                    brightCyan: '#56b6c2',
+                    brightWhite: '#ffffff'
+                },
+                rows: 30,
+                cols: 100
+            });
+
+            fitAddon = new FitAddon.FitAddon();
+            term.loadAddon(fitAddon);
+            
+            term.open(document.getElementById('terminal'));
+            fitAddon.fit();
+
+            // Handle input
+            term.onData(data => {
+                handleTerminalInput(data);
+            });
+
+            // Welcome message
+            term.writeln('\x1b[1;32m╔══════════════════════════════════════════════════════════╗\x1b[0m');
+            term.writeln('\x1b[1;32m║\x1b[0m          \x1b[1;36mWelcome to ZAB IDE Terminal\x1b[0m                \x1b[1;32m║\x1b[0m');
+            term.writeln('\x1b[1;32m║\x1b[0m   \x1b[33mType commands and press Enter to execute\x1b[0m           \x1b[1;32m║\x1b[0m');
+            term.writeln('\x1b[1;32m╚══════════════════════════════════════════════════════════╝\x1b[0m');
+            term.writeln('');
+            writePrompt();
+        }
+
+        function writePrompt() {
+            const activeTerminal = terminals.find(t => t.id === activeTerminalId);
+            const dir = activeTerminal ? activeTerminal.directory : '~';
+            term.write(`\x1b[1;32m${currentUsername}@zabide\x1b[0m:\x1b[1;34m${dir}\x1b[0m$ `);
+        }
+
+        function handleTerminalInput(data) {
+            const code = data.charCodeAt(0);
+
+            if (code === 13) { // Enter
+                term.write('\r\n');
+                if (currentCommand.trim()) {
+                    executeCommand(currentCommand.trim());
+                } else {
+                    writePrompt();
+                }
+                currentCommand = '';
+            } else if (code === 127) { // Backspace
+                if (currentCommand.length > 0) {
+                    currentCommand = currentCommand.slice(0, -1);
+                    term.write('\b \b');
+                }
+            } else if (code === 3) { // Ctrl+C
+                term.write('^C\r\n');
+                currentCommand = '';
+                writePrompt();
+            } else if (code >= 32 && code <= 126) { // Printable characters
+                currentCommand += data;
+                term.write(data);
+            }
+        }
+
+        /* ================== COMMAND EXECUTION ================== */
+        async function executeCommand(command) {
+            const activeTerminal = terminals.find(t => t.id === activeTerminalId);
+            if (!activeTerminal) return;
+
+            addToHistory(command);
+
+            try {
+                const response = await fetch('api/terminal/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': authToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        command: command,
+                        workingDirectory: activeTerminal.directory
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Write output
+                    if (data.output) {
+                        const lines = data.output.split('\n');
+                        lines.forEach(line => {
+                            term.writeln(line);
+                        });
+                    }
+
+                    // Update directory if it changed
+                    if (data.workingDirectory) {
+                        activeTerminal.directory = data.workingDirectory;
+                        document.getElementById('currentDir').textContent = data.workingDirectory;
+                        updateTerminalItem(activeTerminal.id);
+                    }
+                } else {
+                    term.writeln(`\x1b[1;31mError: ${data.message}\x1b[0m`);
+                }
+            } catch (error) {
+                term.writeln(`\x1b[1;31mFailed to execute command: ${error.message}\x1b[0m`);
+            }
+
+            writePrompt();
+        }
+
+        /* ================== TERMINAL MANAGEMENT ================== */
+        function createNewTerminal() {
+            const terminalId = 'term-' + Date.now();
+            const terminalNum = terminals.length + 1;
+
+            const newTerminal = {
+                id: terminalId,
+                name: `Terminal ${terminalNum}`,
+                directory: getCatalinaHome() + '/webapps/zab',
+                created: Date.now()
+            };
+
+            terminals.push(newTerminal);
+            renderTerminals();
+            switchTerminal(terminalId);
+        }
+
+        function renderTerminals() {
+            const container = document.getElementById('terminalList');
+            container.innerHTML = '';
+
+            terminals.forEach(t => {
+                const item = document.createElement('div');
+                item.className = 'terminal-item' + (t.id === activeTerminalId ? ' active' : '');
+                item.innerHTML = `
+                    <div class="terminal-item-info">
+                        <div class="terminal-item-name">
+                            <i class="fas fa-terminal"></i> ${t.name}
+                        </div>
+                        <div class="terminal-item-path">${t.directory}</div>
+                    </div>
+                    ${terminals.length > 1 ? `<i class="fas fa-times terminal-item-close" onclick="closeTerminal('${t.id}', event)"></i>` : ''}
+                `;
+                item.onclick = (e) => {
+                    if (!e.target.classList.contains('terminal-item-close')) {
+                        switchTerminal(t.id);
+                    }
+                };
+                container.appendChild(item);
+            });
+        }
+
+        function switchTerminal(terminalId) {
+            activeTerminalId = terminalId;
+            const terminal = terminals.find(t => t.id === terminalId);
+            
+            if (terminal) {
+                document.getElementById('currentDir').textContent = terminal.directory;
+                document.getElementById('terminalInfo').textContent = terminal.name;
+            }
+
+            renderTerminals();
+        }
+
+        function updateTerminalItem(terminalId) {
+            renderTerminals();
+        }
+
+        function closeTerminal(terminalId, event) {
+            event.stopPropagation();
+            if (terminals.length === 1) return;
+
+            const index = terminals.findIndex(t => t.id === terminalId);
+            terminals.splice(index, 1);
+
+            if (activeTerminalId === terminalId) {
+                activeTerminalId = terminals[Math.max(0, index - 1)].id;
+                switchTerminal(activeTerminalId);
+            } else {
+                renderTerminals();
+            }
+        }
+
+        function clearTerminal() {
+            term.clear();
+            term.writeln('\x1b[1;33mTerminal cleared\x1b[0m');
+            term.writeln('');
+            writePrompt();
+        }
+
+        async function killTerminal() {
+            if (confirm('Kill current process? This will terminate any running command.')) {
+                try {
+                    await fetch('api/terminal/kill', {
+                        method: 'POST',
+                        headers: { 'Authorization': authToken }
+                    });
+                    term.writeln('\r\n\x1b[1;31mProcess killed\x1b[0m');
+                    writePrompt();
+                } catch (error) {
+                    term.writeln('\r\n\x1b[1;31mFailed to kill process\x1b[0m');
+                }
+            }
+        }
+
+        /* ================== COMMAND HISTORY ================== */
+        function loadCommandHistory() {
+            const saved = localStorage.getItem('zab-terminal-history');
+            if (saved) {
+                try {
+                    commandHistory = JSON.parse(saved);
+                    renderCommandHistory();
+                } catch (e) {
+                    commandHistory = [];
+                }
+            }
+        }
+
+        function addToHistory(command) {
+            commandHistory.push({
+                command: command,
+                timestamp: Date.now()
+            });
+
+            if (commandHistory.length > 100) {
+                commandHistory = commandHistory.slice(-100);
+            }
+
+            localStorage.setItem('zab-terminal-history', JSON.stringify(commandHistory));
+            renderCommandHistory();
+        }
+
+        function renderCommandHistory() {
+            const container = document.getElementById('historyContent');
+
+            if (commandHistory.length === 0) {
+                container.innerHTML = `
+                    <div class="history-empty">
+                        <i class="fas fa-history"></i>
+                        <p>No command history yet</p>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            const reversed = [...commandHistory].reverse();
+
+            reversed.forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.innerHTML = `
+                    <div class="history-command">${escapeHtml(item.command)}</div>
+                    <div class="history-meta">${formatTimestamp(item.timestamp)}</div>
+                `;
+                historyItem.onclick = () => {
+                    currentCommand = item.command;
+                    term.write('\r' + ' '.repeat(200) + '\r'); // Clear line
+                    writePrompt();
+                    term.write(item.command);
+                };
+                container.appendChild(historyItem);
+            });
+        }
+
+        function clearHistory() {
+            if (confirm('Clear all command history?')) {
+                commandHistory = [];
+                localStorage.removeItem('zab-terminal-history');
+                renderCommandHistory();
+            }
+        }
+
+        function toggleHistoryPanel() {
+            const panel = document.getElementById('historyPanel');
+            const toggle = document.getElementById('historyToggle');
+
+            if (panel.classList.contains('open')) {
+                panel.classList.remove('open');
+                toggle.classList.remove('hidden');
+            } else {
+                panel.classList.add('open');
+                toggle.classList.add('hidden');
+            }
+        }
+
+        /* ================== HELPERS ================== */
+        function getCatalinaHome() {
+            return '/opt/tomcat'; // Adjust to your Tomcat path
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+
+            if (diff < 60000) {
+                return 'Just now';
+            } else if (diff < 3600000) {
+                const mins = Math.floor(diff / 60000);
+                return `${mins} min${mins > 1 ? 's' : ''} ago`;
+            } else if (diff < 86400000) {
+                const hours = Math.floor(diff / 3600000);
+                return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+            } else {
+                return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+            }
+        }
+    </script>
+
+</body>
+</html>
