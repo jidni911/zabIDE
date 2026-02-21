@@ -629,7 +629,8 @@
             height: 24px;
         }
 
-        .status-left, .status-right {
+        .status-left,
+        .status-right {
             display: flex;
             gap: 15px;
         }
@@ -745,9 +746,9 @@
             </div>
             <div style="padding: 8px 10px; border-bottom: 1px solid var(--border-color);">
                 <div style="position: relative;">
-                    <input type="text" id="fileSearchInput" class="form-control form-control-sm" 
-                           placeholder="Search files..." 
-                           style="background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); font-size: 12px; padding-left: 30px;">
+                    <input type="text" id="fileSearchInput" class="form-control form-control-sm"
+                        placeholder="Search files..."
+                        style="background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); font-size: 12px; padding-left: 30px;">
                     <i class="fas fa-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 12px;"></i>
                 </div>
             </div>
@@ -823,7 +824,8 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Location</label>
-                        <input type="text" class="form-control" id="newFilePath" placeholder="folder/subfolder/" value="">
+                        <input type="text" class="form-control" id="newFilePath" placeholder="folder/subfolder/"
+                            value="">
                         <small class="text-muted">Relative to /webapps/zab/</small>
                     </div>
                 </div>
@@ -850,7 +852,8 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Location</label>
-                        <input type="text" class="form-control" id="newFolderPath" placeholder="parent-folder/" value="">
+                        <input type="text" class="form-control" id="newFolderPath" placeholder="parent-folder/"
+                            value="">
                         <small class="text-muted">Relative to /webapps/zab/</small>
                     </div>
                 </div>
@@ -883,14 +886,16 @@
                     </div>
                     <div id="uploadProgress" class="d-none">
                         <div class="progress mb-2" style="height: 20px;">
-                            <div id="uploadProgressBar" class="progress-bar" role="progressbar" style="width: 0%">0%</div>
+                            <div id="uploadProgressBar" class="progress-bar" role="progressbar" style="width: 0%">0%
+                            </div>
                         </div>
                         <small id="uploadStatus" class="text-muted"></small>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary btn-sm" data-mdb-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary btn-sm" id="uploadBtn" onclick="uploadFiles()">Upload</button>
+                    <button type="button" class="btn btn-primary btn-sm" id="uploadBtn"
+                        onclick="uploadFiles()">Upload</button>
                 </div>
             </div>
         </div>
@@ -947,7 +952,7 @@
                 parentElement = document.getElementById('fileTree');
                 parentElement.innerHTML = '';
                 allTreeItems = [];
-                
+
                 // Don't render the root 'zab' node, render its children directly
                 if (node && node.isDirectory && node.children) {
                     node.children.forEach(child => {
@@ -1084,7 +1089,7 @@
             if (node.isDirectory && node.children) {
                 const childrenDiv = document.createElement('div');
                 childrenDiv.className = 'tree-children';
-                
+
                 node.children.forEach(child => {
                     renderFileTree(child, childrenDiv, level + 1);
                 });
@@ -1139,7 +1144,7 @@
 
             try {
                 updateStatus('Loading file...');
-                
+
                 const response = await fetch(`file/read?path=${encodeURIComponent(filepath)}`, {
                     headers: { 'Authorization': authToken }
                 });
@@ -1162,7 +1167,7 @@
 
                 // Switch to this file
                 switchToFile(filepath);
-                
+
                 updateStatus('File loaded');
             } catch (error) {
                 console.error('Error opening file:', error);
@@ -1244,7 +1249,7 @@
             editor.oninput = () => {
                 fileData.content = editor.value;
                 fileData.modified = fileData.content !== fileData.originalContent;
-                
+
                 // Update tab modified state
                 if (fileData.modified) {
                     fileData.element.classList.add('modified');
@@ -1274,16 +1279,27 @@
                 document.querySelector('.btn-save').disabled = true;
                 document.querySelector('.btn-save').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
+                // Create a Blob from the content
+                const blob = new Blob([fileData.content], { type: 'text/plain' });
+
+                // Get just the filename from the full path
+                const filename = activeFile.split('/').pop();
+
+                // Get the directory path (everything except the filename)
+                const dirPath = activeFile.substring(0, activeFile.lastIndexOf('/') + 1);
+
+                // Create FormData and append the file
+                const formData = new FormData();
+                formData.append('files', blob, filename);
+                formData.append('path', dirPath);
+
                 const response = await fetch('file/write', {
                     method: 'POST',
                     headers: {
-                        'Authorization': authToken,
-                        'Content-Type': 'application/json'
+                        'Authorization': authToken
+                        // Don't set Content-Type - browser will set it automatically with boundary
                     },
-                    body: JSON.stringify({
-                        path: activeFile,
-                        content: fileData.content
-                    })
+                    body: formData
                 });
 
                 if (!response.ok) throw new Error('Failed to save file');
@@ -1295,7 +1311,7 @@
 
                 updateStatus('File saved successfully', 'success');
                 document.querySelector('.btn-save').innerHTML = '<i class="fas fa-save"></i> Save';
-                
+
                 setTimeout(() => {
                     document.querySelector('.btn-save').disabled = true;
                 }, 500);
@@ -1311,7 +1327,7 @@
 
         function closeTab(filepath) {
             const fileData = openFiles.get(filepath);
-            
+
             if (fileData.modified) {
                 if (!confirm('File has unsaved changes. Close anyway?')) {
                     return;
@@ -1391,7 +1407,7 @@
 
                 updateStatus('File created successfully', 'success');
                 refreshTree();
-                
+
                 // Open the new file
                 setTimeout(() => openFile(fullPath), 500);
 
@@ -1440,7 +1456,7 @@
         function updateStatus(message, type = 'info') {
             const statusEl = document.getElementById('statusMessage');
             statusEl.textContent = message;
-            
+
             if (type === 'success') {
                 statusEl.style.color = 'var(--success)';
             } else if (type === 'error') {
@@ -1517,7 +1533,7 @@
 
         function renderBookmarks() {
             const container = document.getElementById('bookmarksContent');
-            
+
             if (bookmarks.length === 0) {
                 container.innerHTML = `
                     <div class="bookmarks-empty">
@@ -1532,7 +1548,7 @@
             bookmarks.forEach(bookmark => {
                 const item = document.createElement('div');
                 item.className = 'bookmark-item';
-                
+
                 item.innerHTML = `
                     <i class="fas fa-star bookmark-icon"></i>
                     <div class="bookmark-info">
@@ -1565,7 +1581,7 @@
         function toggleBookmarksPanel() {
             const panel = document.getElementById('bookmarksPanel');
             const toggle = document.getElementById('bookmarksToggle');
-            
+
             if (panel.classList.contains('open')) {
                 panel.classList.remove('open');
                 toggle.classList.remove('hidden');
@@ -1596,7 +1612,7 @@
 
             // Collect all matching paths
             const matchingPaths = new Set();
-            
+
             // Deep search through all items
             allTreeItems.forEach(item => {
                 const matches = item.name.includes(query) || item.path.includes(query);
@@ -1615,7 +1631,7 @@
             allTreeItems.forEach(item => {
                 const shouldShow = matchingPaths.has(item.path);
                 item.element.style.display = shouldShow ? '' : 'none';
-                
+
                 // If this is a folder that should be shown, expand it
                 if (shouldShow && item.node.isDirectory) {
                     const childrenDiv = item.element.querySelector('.tree-children');
@@ -1643,7 +1659,7 @@
         async function downloadItem(path, isDirectory) {
             try {
                 updateStatus('Preparing download...');
-                
+
                 if (isDirectory) {
                     // Download folder as ZIP
                     window.location.href = `file/download-zip?path=${encodeURIComponent(path)}&_auth=${encodeURIComponent(authToken)}`;
@@ -1697,7 +1713,7 @@
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
                     const progress = ((i / files.length) * 100).toFixed(0);
-                    
+
                     progressBar.style.width = progress + '%';
                     progressBar.textContent = progress + '%';
                     statusText.textContent = `Uploading ${i + 1} of ${files.length}: ${file.name}`;
@@ -1707,7 +1723,7 @@
                     const formData = new FormData();
                     formData.append("files", files[i]);
                     formData.append("path", uploadPath);
-                    
+
                     // Upload to server
                     const response = await fetch('file/write', {
                         method: 'POST',
